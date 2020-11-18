@@ -97,8 +97,6 @@ def get_streamlit_files(github, github_login):
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True)
 def get_content_file(github, user, repo, branch, filename):
     repo = github.get_repo(f"{user}/{repo}")
-    st.help(repo.get_contents)
-    contents = repo.get_contents(filename)
-    print(contents)
+    contents = repo.get_contents(filename, ref=branch)
     return contents
         

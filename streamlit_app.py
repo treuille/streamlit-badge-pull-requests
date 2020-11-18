@@ -65,6 +65,9 @@ def main():
     '**content_file:**', content_file
     st.text(content_file.decoded_content.decode('utf-8'))
 
+    repo = github.get_repo(f"{github_path.user}/{github_path.repo}")
+    st.help(repo.get_contents)
+
     st.write(dir(content_file))
 #     f"**user:** `{github_path.group('user')}`"
 #     f"**repo:** `{github_path.group('repo')}`"
