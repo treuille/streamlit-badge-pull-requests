@@ -31,20 +31,20 @@ def get_config():
     github = cached_github.from_access_token(access_token)
     return github
 
-GithubPath = collections.namedtuple('GithubPath', ('user', 'repo', 'branch', 'file'))
+GithubPath = collections.namedtuple('GithubPath', ('org', 'repo', 'branch', 'file'))
 
 def github_path_from_streamlit_url(url):
     """Returns the Github path given a Streamlit url."""
     streamlit_app_url = re.compile(
         r"https://share.streamlit.io/"
-        r"(?P<user>[\w-]+)/"
+        r"(?P<org>[\w-]+)/"
         r"(?P<repo>[\w-]+)/"
         r"(?P<branch>[\w-]+)/"
         r"(?P<file>[\w-]+\.py)"
     )
     matched_url = streamlit_app_url.match(url)
     return GithubPath(
-        matched_url.group('user'),
+        matched_url.group('org'),
         matched_url.group('repo'),
         matched_url.group('branch'),
         matched_url.group('file')
@@ -55,7 +55,7 @@ def github_path_from_url(url):
     '`github_path_from_url`', url
     github_url = re.compile(
         r"https://github.com/"
-        r"(?P<user>[\w-]+)/"
+        r"(?P<org>[\w-]+)/"
         r"(?P<repo>[\w-]+)/blob/" 
         r"(?P<branch>[\w-]+)/"
         r"(?P<file>[\w-]+\.md)"
@@ -64,7 +64,7 @@ def github_path_from_url(url):
     '**url:**', url
     matched_url = github_url.match(url)
     return GithubPath(
-        matched_url.group('user'),
+        matched_url.group('org'),
         matched_url.group('repo'),
         matched_url.group('branch'),
         matched_url.group('file')
@@ -86,15 +86,14 @@ def main():
     'github_path', github_path
     'about to get content file'
     content_file = cached_github.get_content_file(github,
-            github_path.user, github_path.repo, github_path.branch, 'README.md')
+            github_path.org, github_path.repo, github_path.branch, 'README.md')
     '**content_file:**', content_file
     st.text(content_file.decoded_content.decode('utf-8'))
 
-    repo = github.get_repo(f"{github_path.user}/{github_path.repo}")
+    repo = github.get_repo(f"{github_path.org}/{github_path.repo}")
     st.help(repo.get_contents)
 
     st.write(dir(content_file))
-#     f"**user:** `{github_path.group('user')}`"
 #     f"**repo:** `{github_path.group('repo')}`"
 #     f"**branch:** `{github_path.group('branch')}`"
 #     f"**file:** `{github_path.group('file')}`"
