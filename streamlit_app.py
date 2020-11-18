@@ -24,7 +24,8 @@ def get_config():
     # Parse and return the information
     # user_table = extract_csv_from_zip_file(zip_file)
     access_token = st.sidebar.text_input("Github access token", type="password")
-    token_name = st.sidebar.text_input("Token name")
+    f"**access_token:** `{access_token}`"
+    # token_name = st.sidebar.text_input("Token name")
     
     github = cached_github.from_access_token(access_token)
     return github
@@ -58,6 +59,13 @@ def main():
     f"**repo_streamlit_url:** `{repo_streamlit_url}`"
     github_path = get_github_path(repo_streamlit_url)
     'github_path', github_path
+    'about to get content file'
+    content_file = cached_github.get_content_file(github,
+            github_path.user, github_path.repo, github_path.branch, 'README.md')
+    '**content_file:**', content_file
+    st.text(content_file.decoded_content.decode('utf-8'))
+
+    st.write(dir(content_file))
 #     f"**user:** `{github_path.group('user')}`"
 #     f"**repo:** `{github_path.group('repo')}`"
 #     f"**branch:** `{github_path.group('branch')}`"

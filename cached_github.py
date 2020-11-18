@@ -29,11 +29,8 @@ def _get_attr_func(attr):
 #     hasher.update(github._access_token.encode('utf-8'))
 #     return hasher.digest()
 
-# Ignore the github objects
-_hash_github_object = lambda _: None
-
 GITHUB_HASH_FUNCS = {
-    GithubMainClass.Github: _hash_github_object, 
+    GithubMainClass.Github: lambda _: None,
     NamedUser.NamedUser: _get_attr_func('login'),
     ContentFile.ContentFile: _get_attr_func('download_url'),
 }
@@ -60,10 +57,10 @@ def rate_limit(func):
     return wrapped_func
 
 @rate_limit
-@st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True)
+@st.cache(hash_funcs=GITHUB_HASH_FUNCS)
 def from_access_token(access_token):
-    github = Github(access_token)
-    github._access_token = access_token
+    """Returns a ghitub object from an access token."""
+    github = Github(access_token) 
     return github
 
 @rate_limit
@@ -95,3 +92,13 @@ def get_streamlit_files(github, github_login):
         else:
             # In this case, we have no idea what's going on, so just raise again. 
             raise
+        
+@rate_limit
+@st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True)
+def get_content_file(github, user, repo, branch, filename):
+    repo = github.get_repo(f"{user}/{repo}")
+    st.help(repo.get_contents)
+    contents = repo.get_contents(filename)
+    print(contents)
+    return contents
+        
