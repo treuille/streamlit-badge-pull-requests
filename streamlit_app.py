@@ -1,6 +1,11 @@
 import streamlit as st
+
+# Libraries from this project
 import cached_github
+
+# External libraries
 import re
+import collections
 
 def get_config():
     """Returns all the config information to run the app."""
@@ -24,6 +29,8 @@ def get_config():
     github = cached_github.from_access_token(access_token)
     return github
 
+GithubPath = collections.namedtuple('GithubPath', ('user', 'repo', 'branch', 'file'))
+
 def get_github_path(url):
     """Returns the Github path given a Streamlit url."""
     streamlit_app_url = re.compile(
@@ -33,8 +40,13 @@ def get_github_path(url):
         r"(?P<branch>[\w-]+)/" +
         r"(?P<file>[\w-]+\.py)"
     )
-    st.help(streamlit_app_url)
-    return streamlit_app_url.match(url)
+    matched_url = streamlit_app_url.match(url)
+    return GithubPath(
+        matched_url.group('user'),
+        matched_url.group('repo'),
+        matched_url.group('branch'),
+        matched_url.group('file')
+    )
 
 def main():
     """Execution starts here."""
@@ -46,10 +58,10 @@ def main():
     f"**repo_streamlit_url:** `{repo_streamlit_url}`"
     github_path = get_github_path(repo_streamlit_url)
     'github_path', github_path
-    f"**user:** `{github_path.group('user')}`"
-    f"**repo:** `{github_path.group('repo')}`"
-    f"**branch:** `{github_path.group('branch')}`"
-    f"**file:** `{github_path.group('file')}`"
+#     f"**user:** `{github_path.group('user')}`"
+#     f"**repo:** `{github_path.group('repo')}`"
+#     f"**branch:** `{github_path.group('branch')}`"
+#     f"**file:** `{github_path.group('file')}`"
 
 # Start execution at the main() function 
 if __name__ == '__main__':
