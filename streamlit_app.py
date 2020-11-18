@@ -1,6 +1,6 @@
 import streamlit as st
 import cached_github
-
+import re
 
 def get_config():
     """Returns all the config information to run the app."""
@@ -24,11 +24,32 @@ def get_config():
     github = cached_github.from_access_token(access_token)
     return github
 
+def get_github_path(url):
+    """Returns the Github path given a Streamlit url."""
+    streamlit_app_url = re.compile(
+        r"https://share.streamlit.io/" +
+        r"(?P<user>[\w-]+)/" +
+        r"(?P<repo>[\w-]+)/" +
+        r"(?P<branch>[\w-]+)/" +
+        r"(?P<file>[\w-]+\.py)"
+    )
+    st.help(streamlit_app_url)
+    return streamlit_app_url.match(url)
+
 def main():
     """Execution starts here."""
     github = get_config()
     st.write('Hello world')
     'github', github, id(github)
+
+    repo_streamlit_url = "https://share.streamlit.io/shivampurbia/tweety-sentiment-analyis-streamlit-app/main/Tweety.py"
+    f"**repo_streamlit_url:** `{repo_streamlit_url}`"
+    github_path = get_github_path(repo_streamlit_url)
+    'github_path', github_path
+    f"**user:** `{github_path.group('user')}`"
+    f"**repo:** `{github_path.group('repo')}`"
+    f"**branch:** `{github_path.group('branch')}`"
+    f"**file:** `{github_path.group('file')}`"
 
 # Start execution at the main() function 
 if __name__ == '__main__':
