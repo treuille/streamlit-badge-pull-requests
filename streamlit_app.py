@@ -4,6 +4,7 @@ import streamlit as st
 import cached_github
 
 # External libraries
+import github
 import re
 import collections
 
@@ -32,16 +33,36 @@ def get_config():
 
 GithubPath = collections.namedtuple('GithubPath', ('user', 'repo', 'branch', 'file'))
 
-def get_github_path(url):
+def github_path_from_streamlit_url(url):
     """Returns the Github path given a Streamlit url."""
     streamlit_app_url = re.compile(
-        r"https://share.streamlit.io/" +
-        r"(?P<user>[\w-]+)/" +
-        r"(?P<repo>[\w-]+)/" +
-        r"(?P<branch>[\w-]+)/" +
+        r"https://share.streamlit.io/"
+        r"(?P<user>[\w-]+)/"
+        r"(?P<repo>[\w-]+)/"
+        r"(?P<branch>[\w-]+)/"
         r"(?P<file>[\w-]+\.py)"
     )
     matched_url = streamlit_app_url.match(url)
+    return GithubPath(
+        matched_url.group('user'),
+        matched_url.group('repo'),
+        matched_url.group('branch'),
+        matched_url.group('file')
+    )
+
+def github_path_from_url(url):
+    """Returns the Github path given a Github url."""
+    '`github_path_from_url`', url
+    github_url = re.compile(
+        r"https://github.com/"
+        r"(?P<user>[\w-]+)/"
+        r"(?P<repo>[\w-]+)/blob/" 
+        r"(?P<branch>[\w-]+)/"
+        r"(?P<file>[\w-]+\.md)"
+    )
+    '**github_url:**', github_url
+    '**url:**', url
+    matched_url = github_url.match(url)
     return GithubPath(
         matched_url.group('user'),
         matched_url.group('repo'),
@@ -55,9 +76,13 @@ def main():
     st.write('Hello world')
     'github', github, id(github)
 
-    repo_streamlit_url = "https://share.streamlit.io/shivampurbia/tweety-sentiment-analyis-streamlit-app/main/Tweety.py"
-    f"**repo_streamlit_url:** `{repo_streamlit_url}`"
-    github_path = get_github_path(repo_streamlit_url)
+    streamlit_url = "https://share.streamlit.io/shivampurbia/tweety-sentiment-analyis-streamlit-app/main/Tweety.py"
+    f"**streamlit_url:** `{streamlit_url}`"
+    github_path = github_path_from_streamlit_url(streamlit_url)
+
+    github_url = r"https://github.com/tester-burner/test1/blob/main/README.md"
+    github_path = github_path_from_url(github_url)
+
     'github_path', github_path
     'about to get content file'
     content_file = cached_github.get_content_file(github,
@@ -77,4 +102,3 @@ def main():
 # Start execution at the main() function 
 if __name__ == '__main__':
     main()
-
