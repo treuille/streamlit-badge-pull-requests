@@ -84,19 +84,26 @@ def main():
     github_path = github_path_from_url(github_url)
 
     'github_path', github_path
-    'about to get content file'
-    content_file = cached_github.get_content_file(github,
-            github_path.org, github_path.repo, github_path.branch, 'README.md')
-    '**content_file:**', content_file
-    st.text(content_file.decoded_content.decode('utf-8'))
 
-    repo = github.get_repo(f"{github_path.org}/{github_path.repo}")
-    st.help(repo.get_contents)
-
-    st.write(dir(content_file))
-#     f"**repo:** `{github_path.group('repo')}`"
-#     f"**branch:** `{github_path.group('branch')}`"
-#     f"**file:** `{github_path.group('file')}`"
+    if st.button('Fork the repo'):
+        repo = github.get_repo(f'{github_path.org}/{github_path.repo}')
+        'repo', repo
+        forked_repo = repo.create_fork()
+        'forked_repo', forked_repo
+    
+#     'about to get content file'
+#     content_file = cached_github.get_content_file(github,
+#             github_path.org, github_path.repo, github_path.branch, 'README.md')
+#     '**content_file:**', content_file
+#     st.text(content_file.decoded_content.decode('utf-8'))
+# 
+#     repo = github.get_repo(f"{github_path.org}/{github_path.repo}")
+#     st.help(repo.get_contents)
+# 
+#     st.write(dir(content_file))
+# #     f"**repo:** `{github_path.group('repo')}`"
+# #     f"**branch:** `{github_path.group('branch')}`"
+# #     f"**file:** `{github_path.group('file')}`"
 
 # Start execution at the main() function 
 if __name__ == '__main__':
