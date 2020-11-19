@@ -43,11 +43,11 @@ def main():
     github_url = r"https://github.com/tester-burner/test1/blob/main/README.md"
     f'**github_url** `{github_url}`'
     coords = streamlit_github.GithubCoords.from_github_url(github_url)
-    content_file = streamlit_github.get_contents(github, coords)
+    content_file = coords.get_contents(github)
     st.code(content_file.decoded_content.decode('utf-8'), language='markdown')
     
     if st.button('Fork the repo'):
-        repo = streamlit_github.get_repo(github, coords)
+        repo = coords.get_repo(github)
         'repo', repo
         streamlit_github.fork_and_clone_repo(repo, FORK_BASE_PATH)
 

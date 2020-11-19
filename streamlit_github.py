@@ -111,6 +111,18 @@ class GithubCoords:
             matched_url.group('path')
         )
 
+    def get_repo(self, github: GithubMainClass.Github) -> Repository.Repository:
+        """Get a live reference to the repository pointed
+        by these Github coordinates."""
+
+        return github.get_repo(f"{self.owner}/{self.repo}")
+
+    def get_contents(self, github: GithubMainClass.Github) -> ContentFile.ContentFile:
+        """Get a live reference to the file contents pointed
+        by these Github coordinates."""
+
+        return self.get_repo(github).get_contents(self.path, ref=self.branch)
+
 @rate_limit
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS)
 def from_access_token(access_token):
@@ -152,18 +164,6 @@ def get_streamlit_files(github, github_login):
             # In this case, we have no idea what's going on, so just raise again. 
             raise
 
-@st.cache(hash_funcs=GITHUB_HASH_FUNCS)
-def get_repo(github: GithubMainClass.Github, coords: GithubCoords) -> Repository.Repository:
-    """Get a live reference to the repository pointed
-    by these Github coordinates."""
-
-    return github.get_repo(f"{coords.owner}/{coords.repo}")
-
-def get_contents(github: GithubMainClass.Github, coords: GithubCoords) -> ContentFile.ContentFile:
-    """Get a live reference to the file contents pointed
-    by these Github coordinates."""
-
-    return get_repo(github, coords).get_contents(coords.path, ref=coords.branch)
 
 def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
     """Clones the given repository into the path give by base_path and returns
