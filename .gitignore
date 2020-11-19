@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Forked repos
+forks/
+
 # # C extensions
 # *.so
 # 

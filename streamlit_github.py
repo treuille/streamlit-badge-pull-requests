@@ -1,9 +1,13 @@
 """Special utility functions to use PyGithub with Streamlit."""
 
 import streamlit as st
+import streamlit_subprocess
 import functools
+import os
+import tempfile
 import math
 import time
+import shutil
 import re
 from datetime import datetime
 from github import Github
@@ -98,6 +102,8 @@ class GithubCoords:
              r"(?P<path>[\w-]+\.md)"
              )
         matched_url = github_url.match(url)
+        st.write(f'**github_url:**', github_url)
+        st.write(f'**url:** `{url}`')
         return GithubCoords(
             matched_url.group('owner'),
             matched_url.group('repo'),
@@ -158,4 +164,28 @@ def get_contents(github: GithubMainClass.Github, coords: GithubCoords) -> Conten
     by these Github coordinates."""
 
     return get_repo(github, coords).get_contents(coords.path, ref=coords.branch)
+
+def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
+    """Clones the given repository into the path give by base_path and returns
+    the root path of the repository."""
+    # Fork the original repo
+    'repo', repo
+    forked_repo = repo.create_fork()
+    'forked_repo', forked_repo
+    st.write('forked_repo', forked_repo, dir(forked_repo))
+    st.write('**git_url**', forked_repo.git_url)
+
+    st.write('forked_repo.owner', dir(forked_repo.owner))
+    clone_path = os.path.join(base_path, f'{repo.owner.login}__{forked_repo.name}')
+    if os.path.exists(clone_path):
+        st.warning(f"Repo path `{clone_path}` already exists. Skipping.")        
+        return clone_path
+    temp_path = tempfile.mkdtemp()
+    st.write(clone_path, temp_path)
+    clone_retval = streamlit_subprocess.run(['git', 'clone', forked_repo.git_url, temp_path])
+    if clone_retval != 0:
+        raise RuntimeError(f'Unable to clone {forked_repo.git_url}.')
+    shutil.move(temp_path, clone_path)
+    st.success(f"Cloned `{forked_repo.git_url}` to `{clone_path}`.")
+    return clone_path
 

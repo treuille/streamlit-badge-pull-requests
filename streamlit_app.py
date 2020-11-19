@@ -3,7 +3,9 @@ Streamlit sharing apps."""
 
 import streamlit as st
 import streamlit_github
-import streamlit_subprocess
+
+# This is where we will store all the forked repositories
+FORK_BASE_PATH = 'forks'
 
 def get_config():
     """Returns all the config information to run the app."""
@@ -11,8 +13,6 @@ def get_config():
     # Parse and return the information
     access_token = st.sidebar.text_input("Github access token", type="password")
     github = streamlit_github.from_access_token(access_token)
-    f"**access_token:** `{access_token}`"
-    
     return github
 
 def main():
@@ -41,19 +41,16 @@ def main():
 
     # Test out content_file_from_app_url()
     github_url = r"https://github.com/tester-burner/test1/blob/main/README.md"
+    f'**github_url** `{github_url}`'
     coords = streamlit_github.GithubCoords.from_github_url(github_url)
-    f"**coords:**", coords
     content_file = streamlit_github.get_contents(github, coords)
-    st.write(dir(content_file))
-    f"**content_file:**", content_file
     st.code(content_file.decoded_content.decode('utf-8'), language='markdown')
-# 
-#       if st.button('Fork the repo'):
-#           repo = github.get_repo(f'{github_path.org}/{github_path.repo}')
-#           'repo', repo
-#           forked_repo = repo.create_fork()
-#           'forked_repo', forked_repo
-#       
+    
+    if st.button('Fork the repo'):
+        repo = streamlit_github.get_repo(github, coords)
+        'repo', repo
+        streamlit_github.fork_and_clone_repo(repo, FORK_BASE_PATH)
+
 
 # Start execution at the main() function 
 if __name__ == '__main__':
