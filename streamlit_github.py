@@ -169,17 +169,16 @@ def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
     """Clones the given repository into the path give by base_path and returns
     the root path of the repository."""
     # Fork the original repo
-    'repo', repo
     forked_repo = repo.create_fork()
-    'forked_repo', forked_repo
-    st.write('forked_repo', forked_repo, dir(forked_repo))
-    st.write('**git_url**', forked_repo.git_url)
+    st.success(f"Forked repo `{repo.git_url}`")
 
-    st.write('forked_repo.owner', dir(forked_repo.owner))
+    # Check to see whether we've already cloned this repo.
     clone_path = os.path.join(base_path, f'{repo.owner.login}__{forked_repo.name}')
     if os.path.exists(clone_path):
         st.warning(f"Repo path `{clone_path}` already exists. Skipping.")        
         return clone_path
+
+    # Clone the repo.
     temp_path = tempfile.mkdtemp()
     st.write(clone_path, temp_path)
     clone_retval = streamlit_subprocess.run(['git', 'clone', forked_repo.git_url, temp_path])
