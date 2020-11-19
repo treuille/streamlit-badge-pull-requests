@@ -3,6 +3,7 @@ Streamlit sharing apps."""
 
 import streamlit as st
 import streamlit_github
+import streamlit_subprocess
 
 def get_config():
     """Returns all the config information to run the app."""
@@ -17,24 +18,26 @@ def get_config():
 def main():
     """Execution starts here."""
 
-    # Get a github object from the user's authentication token
-    github = get_config()
+    streamlit_subprocess.run(['ls', '-la'])
 
-    # Test out content_file_from_streamlit_url()
-    streamlit_url = "https://share.streamlit.io/shivampurbia/tweety-sentiment-analyis-streamlit-app/main/Tweety.py"
-    f"**streamlit_url:** `{streamlit_url}`"
-    content_file = streamlit_github.content_file_from_streamlit_url(github, streamlit_url)
-    f"**content_file:**", content_file
-    st.write(dir(content_file))
-    st.code(content_file.decoded_content.decode('utf-8'))
-
-    # Test out content_file_from_streamlit_url()
-    github_url = r"https://github.com/tester-burner/test1/blob/main/README.md"
-    content_file = streamlit_github.content_file_from_github_url(github, github_url)
-    f"**content_file:**", content_file
-    st.write(dir(content_file))
-    st.code(content_file.decoded_content.decode('utf-8'), language='markdown')
-
+#     # Get a github object from the user's authentication token
+#     github = get_config()
+# 
+# #     # Test out content_file_from_streamlit_url()
+#     streamlit_url = "https://share.streamlit.io/shivampurbia/tweety-sentiment-analyis-streamlit-app/main/Tweety.py"
+#     f"**streamlit_url:** `{streamlit_url}`"
+#     content_file = streamlit_github.content_file_from_streamlit_url(github, streamlit_url)
+#     f"**content_file:**", content_file
+#     st.write(dir(content_file))
+#     st.code(content_file.decoded_content.decode('utf-8'))
+# 
+#     # Test out content_file_from_streamlit_url()
+#     github_url = r"https://github.com/tester-burner/test1/blob/main/README.md"
+#     content_file = streamlit_github.content_file_from_github_url(github, github_url)
+#     f"**content_file:**", content_file
+#     st.write(dir(content_file))
+#     st.code(content_file.decoded_content.decode('utf-8'), language='markdown')
+# 
 #       if st.button('Fork the repo'):
 #           repo = github.get_repo(f'{github_path.org}/{github_path.repo}')
 #           'repo', repo
