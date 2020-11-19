@@ -1,9 +1,10 @@
-"""Wrapy PyGithub in Streamlit's caching functionality."""
+"""Special utility functions to use PyGithub with Streamlit."""
 
 import streamlit as st
 import functools
 import math
 import time
+import re
 from datetime import datetime
 from github import Github
 from github import NamedUser
@@ -12,23 +13,15 @@ from github import RateLimitExceededException
 from github import GithubException
 from github import MainClass as GithubMainClass
 
-
 def _get_attr_func(attr):
     """Returns a function which gets this attribute from an object."""
+
     def get_attr_func(obj):
         return getattr(obj, attr)
     return get_attr_func
 
-# def _hash_github_object(github):
-#     """Special hasher for the github function itself."""
-#     # Since we're hashing to desk, we'd don't want to store the raw
-#     # access token, instead we store a cryptographically secure (aka salted)
-#     # hash of it.
-#     hasher = hashlib.sha256()
-#     hasher.update(b'streamlit_salt')
-#     hasher.update(github._access_token.encode('utf-8'))
-#     return hasher.digest()
-
+# This dictionary of hash functions allows you to safely intermix PyGithub
+# with Streamit caching.
 GITHUB_HASH_FUNCS = {
     GithubMainClass.Github: lambda _: None,
     NamedUser.NamedUser: _get_attr_func('login'),
@@ -60,6 +53,7 @@ def rate_limit(func):
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS)
 def from_access_token(access_token):
     """Returns a ghitub object from an access token."""
+
     github = Github(access_token) 
     return github
 
@@ -67,6 +61,7 @@ def from_access_token(access_token):
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True)
 def get_user_from_email(github, email):
     """Returns a user for that email or None."""
+
     users = list(github.search_users(f'type:user {email} in:email'))
     if len(users) == 0:
         return None
@@ -78,6 +73,8 @@ def get_user_from_email(github, email):
 @rate_limit
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True)
 def get_streamlit_files(github, github_login):
+    """Returns every single file on github which imports streamlit."""
+
     try:
         SEARCH_QUERY = 'extension:py "import streamlit as st" user:'
         files = github.search_code(SEARCH_QUERY + github_login)
@@ -93,10 +90,46 @@ def get_streamlit_files(github, github_login):
             # In this case, we have no idea what's going on, so just raise again. 
             raise
         
-@rate_limit
-@st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True)
-def get_content_file(github, user, repo, branch, filename):
-    repo = github.get_repo(f"{user}/{repo}")
-    contents = repo.get_contents(filename, ref=branch)
-    return contents
-        
+def content_file_from_streamlit_url(github, url):
+    """Returns the Github path given a Streamlit url."""
+
+    # Parse the Stremalit URL into component parts
+    streamlit_app_url = re.compile(
+        r"https://share.streamlit.io/"
+        r"(?P<owner>[\w-]+)/"
+        r"(?P<repo>[\w-]+)/"
+        r"(?P<branch>[\w-]+)/"
+        r"(?P<path>[\w-]+\.py)"
+    )
+    matched_url = streamlit_app_url.match(url)
+    owner = matched_url.group('owner')
+    repo = matched_url.group('repo')
+    branch = matched_url.group('branch')
+    path = matched_url.group('path')
+
+    # Convert that into a PyGithub ContentFile
+    github_repo = github.get_repo(f"{owner}/{repo}")
+    return github_repo.get_contents(path, ref=branch)
+
+def content_file_from_github_url(github, url):
+    """Returns the Github path given a Github url."""
+
+    # Parse the Github URL into component parts
+    github_url = re.compile(
+           r"https://github.com/"
+           r"(?P<owner>[\w-]+)/"
+           r"(?P<repo>[\w-]+)/blob/" 
+           r"(?P<branch>[\w-]+)/"
+           r"(?P<path>[\w-]+\.md)"
+           )
+    matched_url = github_url.match(url)
+    owner = matched_url.group('owner')
+    repo = matched_url.group('repo')
+    branch = matched_url.group('branch')
+    path = matched_url.group('path')
+
+    # Convert that into a PyGithub ContentFile
+    github_repo = github.get_repo(f"{owner}/{repo}")
+    return github_repo.get_contents(path, ref=branch)
+
+
