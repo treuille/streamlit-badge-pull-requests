@@ -90,7 +90,7 @@ def get_streamlit_files(github, github_login):
             # In this case, we have no idea what's going on, so just raise again. 
             raise
         
-def content_file_from_streamlit_url(github, url):
+def content_file_from_app_url(github, url):
     """Returns the Github path given a Streamlit url."""
 
     # Parse the Stremalit URL into component parts
@@ -131,5 +131,4 @@ def content_file_from_github_url(github, url):
     # Convert that into a PyGithub ContentFile
     github_repo = github.get_repo(f"{owner}/{repo}")
     return github_repo.get_contents(path, ref=branch)
-
 

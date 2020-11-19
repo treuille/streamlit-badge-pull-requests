@@ -18,20 +18,18 @@ def get_config():
 def main():
     """Execution starts here."""
 
-    streamlit_subprocess.run(['ls', '-la'])
-
-#     # Get a github object from the user's authentication token
-#     github = get_config()
+    # Get a github object from the user's authentication token
+    github = get_config()
+ 
+    # Test out content_file_from_app_url()
+    app_url = "https://share.streamlit.io/shivampurbia/tweety-sentiment-analyis-streamlit-app/main/Tweety.py"
+    f"**app_url:** `{app_url}`"
+    content_file = streamlit_github.content_file_from_app_url(github, app_url)
+    f"**content_file:**", content_file
+    st.write(dir(content_file))
+    st.code(content_file.decoded_content.decode('utf-8'))
 # 
-# #     # Test out content_file_from_streamlit_url()
-#     streamlit_url = "https://share.streamlit.io/shivampurbia/tweety-sentiment-analyis-streamlit-app/main/Tweety.py"
-#     f"**streamlit_url:** `{streamlit_url}`"
-#     content_file = streamlit_github.content_file_from_streamlit_url(github, streamlit_url)
-#     f"**content_file:**", content_file
-#     st.write(dir(content_file))
-#     st.code(content_file.decoded_content.decode('utf-8'))
-# 
-#     # Test out content_file_from_streamlit_url()
+#     # Test out content_file_from_app_url()
 #     github_url = r"https://github.com/tester-burner/test1/blob/main/README.md"
 #     content_file = streamlit_github.content_file_from_github_url(github, github_url)
 #     f"**content_file:**", content_file
