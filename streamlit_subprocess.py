@@ -6,15 +6,16 @@ import subprocess
 
 def run(args):
     """Runs a commmand on the command line and outputs the result to Streamlit."""
-    # This is how many characters we read at a time from stdout.
-    READ_BUFFER_LEN = 10
-
-    # Print out the command line
+    # Print out the command.
     st.write(f"**`{' '.join(args)}`**")
+    
+    # Start the subprocess.
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, encoding='utf-8')
+    
+    # Run the subprocess and write the output to Streamlit.
     output = ''
     output_block = st.empty()
-    while chunk := proc.stdout.read(READ_BUFFER_LEN):
+    while chunk := proc.stdout.readline():
         output += chunk
         output_block.code(output, language='sh')
     
