@@ -9,6 +9,7 @@ from datetime import datetime
 from github import Github
 from github import NamedUser
 from github import ContentFile
+from github import Repository
 from github import RateLimitExceededException
 from github import GithubException
 from github import MainClass as GithubMainClass
@@ -26,6 +27,7 @@ GITHUB_HASH_FUNCS = {
     GithubMainClass.Github: lambda _: None,
     NamedUser.NamedUser: _get_attr_func('login'),
     ContentFile.ContentFile: _get_attr_func('download_url'),
+    Repository.Repository: _get_attr_func('git_url'),
 }
 
 def rate_limit(func):
@@ -48,6 +50,60 @@ def rate_limit(func):
                 time.sleep(wait_seconds)
             return func(github, *args, **kwargs)
     return wrapped_func
+
+# The URL of the app badge to include in the apps README.md
+BADGE_URL = r"https://static.streamlit.io/badges/streamlit_badge_black_white.svg"
+
+class GithubCoords:
+    """The path of a Github file, consisting of owner, repo, branch, and path."""
+
+    def __init__(self, owner: str, repo: str, branch: str, path: str) -> None:
+        """Constructor."""
+
+        self.owner = owner
+        self.repo = repo
+        self.branch = branch
+        self.path = path
+
+    @staticmethod
+    def from_app_url(url: str) -> 'GithubCoords':
+        """Returns the GithubCoords given a Streamlit url."""
+
+        # Parse the Stremalit URL into component parts
+        streamlit_app_url = re.compile(
+            r"https://share.streamlit.io/"
+            r"(?P<owner>[\w-]+)/"
+            r"(?P<repo>[\w-]+)/"
+            r"(?P<branch>[\w-]+)/"
+            r"(?P<path>[\w-]+\.py)"
+        )
+        matched_url = streamlit_app_url.match(url)
+        return GithubCoords(
+            matched_url.group('owner'),
+            matched_url.group('repo'),
+            matched_url.group('branch'),
+            matched_url.group('path')
+        )
+
+    @staticmethod
+    def from_github_url(url: str) -> 'GithubCoords':
+        """Returns the GithubCoords given a Github url."""
+
+        # Parse the Github URL into component parts
+        github_url = re.compile(
+             r"https://github.com/"
+             r"(?P<owner>[\w-]+)/"
+             r"(?P<repo>[\w-]+)/blob/"
+             r"(?P<branch>[\w-]+)/"
+             r"(?P<path>[\w-]+\.md)"
+             )
+        matched_url = github_url.match(url)
+        return GithubCoords(
+            matched_url.group('owner'),
+            matched_url.group('repo'),
+            matched_url.group('branch'),
+            matched_url.group('path')
+        )
 
 @rate_limit
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS)
@@ -89,46 +145,17 @@ def get_streamlit_files(github, github_login):
         else:
             # In this case, we have no idea what's going on, so just raise again. 
             raise
-        
-def content_file_from_app_url(github, url):
-    """Returns the Github path given a Streamlit url."""
 
-    # Parse the Stremalit URL into component parts
-    streamlit_app_url = re.compile(
-        r"https://share.streamlit.io/"
-        r"(?P<owner>[\w-]+)/"
-        r"(?P<repo>[\w-]+)/"
-        r"(?P<branch>[\w-]+)/"
-        r"(?P<path>[\w-]+\.py)"
-    )
-    matched_url = streamlit_app_url.match(url)
-    owner = matched_url.group('owner')
-    repo = matched_url.group('repo')
-    branch = matched_url.group('branch')
-    path = matched_url.group('path')
+@st.cache(hash_funcs=GITHUB_HASH_FUNCS)
+def get_repo(github: GithubMainClass.Github, coords: GithubCoords) -> Repository.Repository:
+    """Get a live reference to the repository pointed
+    by these Github coordinates."""
 
-    # Convert that into a PyGithub ContentFile
-    github_repo = github.get_repo(f"{owner}/{repo}")
-    return github_repo.get_contents(path, ref=branch)
+    return github.get_repo(f"{coords.owner}/{coords.repo}")
 
-def content_file_from_github_url(github, url):
-    """Returns the Github path given a Github url."""
+def get_contents(github: GithubMainClass.Github, coords: GithubCoords) -> ContentFile.ContentFile:
+    """Get a live reference to the file contents pointed
+    by these Github coordinates."""
 
-    # Parse the Github URL into component parts
-    github_url = re.compile(
-           r"https://github.com/"
-           r"(?P<owner>[\w-]+)/"
-           r"(?P<repo>[\w-]+)/blob/" 
-           r"(?P<branch>[\w-]+)/"
-           r"(?P<path>[\w-]+\.md)"
-           )
-    matched_url = github_url.match(url)
-    owner = matched_url.group('owner')
-    repo = matched_url.group('repo')
-    branch = matched_url.group('branch')
-    path = matched_url.group('path')
-
-    # Convert that into a PyGithub ContentFile
-    github_repo = github.get_repo(f"{owner}/{repo}")
-    return github_repo.get_contents(path, ref=branch)
+    return get_repo(github, coords).get_contents(coords.path, ref=coords.branch)
 

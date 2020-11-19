@@ -21,20 +21,32 @@ def main():
     # Get a github object from the user's authentication token
     github = get_config()
  
-    # Test out content_file_from_app_url()
-    app_url = "https://share.streamlit.io/shivampurbia/tweety-sentiment-analyis-streamlit-app/main/Tweety.py"
-    f"**app_url:** `{app_url}`"
-    content_file = streamlit_github.content_file_from_app_url(github, app_url)
-    f"**content_file:**", content_file
-    st.write(dir(content_file))
-    st.code(content_file.decoded_content.decode('utf-8'))
-# 
 #     # Test out content_file_from_app_url()
-#     github_url = r"https://github.com/tester-burner/test1/blob/main/README.md"
-#     content_file = streamlit_github.content_file_from_github_url(github, github_url)
-#     f"**content_file:**", content_file
+#     app_url = "https://share.streamlit.io/shivampurbia/tweety-sentiment-analyis-streamlit-app/main/Tweety.py"
+#     f"**app_url:** `{app_url}`"
+#     coords = streamlit_github.GithubCoords.from_app_url(app_url)
+#     f"**coords:**", coords
+#     content_file = streamlit_github.get_contents(github, coords)
 #     st.write(dir(content_file))
-#     st.code(content_file.decoded_content.decode('utf-8'), language='markdown')
+#     f"**content_file:**", content_file
+#     repo = content_file.repository
+#     f"**repo**", repo, repo.git_url
+#     st.write(dir(repo))
+#     readme = repo.get_contents("README.md")
+#     readme_contents = readme.decoded_content.decode('utf-8')
+#     f"**readme**", readme
+#     st.code(readme_contents)
+#     'has_badge', streamlit_github.BADGE_URL in readme_contents
+#     # st.code(content_file.
+
+    # Test out content_file_from_app_url()
+    github_url = r"https://github.com/tester-burner/test1/blob/main/README.md"
+    coords = streamlit_github.GithubCoords.from_github_url(github_url)
+    f"**coords:**", coords
+    content_file = streamlit_github.get_contents(github, coords)
+    st.write(dir(content_file))
+    f"**content_file:**", content_file
+    st.code(content_file.decoded_content.decode('utf-8'), language='markdown')
 # 
 #       if st.button('Fork the repo'):
 #           repo = github.get_repo(f'{github_path.org}/{github_path.repo}')
