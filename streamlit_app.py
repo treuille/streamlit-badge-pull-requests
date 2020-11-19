@@ -1,110 +1,92 @@
+"""A script which lets you batch-add badges to the READMEs of
+Streamlit sharing apps."""
+
 import streamlit as st
-
-# Libraries from this project
 import cached_github
-
-# External libraries
 import github
 import re
 import collections
 
 def get_config():
     """Returns all the config information to run the app."""
-    
-#     # Get input
-#     zip_file = get_zip_file()
-# 
-#     # Check for input
-#     if not zip_file:
-#         err('Please upload a user file. Ask TC for the file.')
-#     if not access_token:
-#         err('Please enter a github access token.')
-#     if not token_name:
-#         err('Please name this token.')
 
     # Parse and return the information
-    # user_table = extract_csv_from_zip_file(zip_file)
     access_token = st.sidebar.text_input("Github access token", type="password")
-    f"**access_token:** `{access_token}`"
-    # token_name = st.sidebar.text_input("Token name")
-    
     github = cached_github.from_access_token(access_token)
+    f"**access_token:** `{access_token}`"
+    
     return github
 
-GithubPath = collections.namedtuple('GithubPath', ('org', 'repo', 'branch', 'file'))
-
-def github_path_from_streamlit_url(url):
+def content_file_from_streamlit_url(github, url):
     """Returns the Github path given a Streamlit url."""
+
+    # Parse the Stremalit URL into component parts
     streamlit_app_url = re.compile(
         r"https://share.streamlit.io/"
-        r"(?P<org>[\w-]+)/"
+        r"(?P<owner>[\w-]+)/"
         r"(?P<repo>[\w-]+)/"
         r"(?P<branch>[\w-]+)/"
-        r"(?P<file>[\w-]+\.py)"
+        r"(?P<path>[\w-]+\.py)"
     )
     matched_url = streamlit_app_url.match(url)
-    return GithubPath(
-        matched_url.group('org'),
-        matched_url.group('repo'),
-        matched_url.group('branch'),
-        matched_url.group('file')
-    )
+    owner = matched_url.group('owner')
+    repo = matched_url.group('repo')
+    branch = matched_url.group('branch')
+    path = matched_url.group('path')
 
-def github_path_from_url(url):
+    # Convert that into a PyGithub ContentFile
+    github_repo = github.get_repo(f"{owner}/{repo}")
+    return github_repo.get_contents(path, ref=branch)
+
+def content_file_from_github_url(github, url):
     """Returns the Github path given a Github url."""
-    '`github_path_from_url`', url
+
+    # Parse the Github URL into component parts
     github_url = re.compile(
-        r"https://github.com/"
-        r"(?P<org>[\w-]+)/"
-        r"(?P<repo>[\w-]+)/blob/" 
-        r"(?P<branch>[\w-]+)/"
-        r"(?P<file>[\w-]+\.md)"
-    )
-    '**github_url:**', github_url
-    '**url:**', url
+           r"https://github.com/"
+           r"(?P<owner>[\w-]+)/"
+           r"(?P<repo>[\w-]+)/blob/" 
+           r"(?P<branch>[\w-]+)/"
+           r"(?P<path>[\w-]+\.md)"
+           )
     matched_url = github_url.match(url)
-    return GithubPath(
-        matched_url.group('org'),
-        matched_url.group('repo'),
-        matched_url.group('branch'),
-        matched_url.group('file')
-    )
+    owner = matched_url.group('owner')
+    repo = matched_url.group('repo')
+    branch = matched_url.group('branch')
+    path = matched_url.group('path')
+
+    # Convert that into a PyGithub ContentFile
+    github_repo = github.get_repo(f"{owner}/{repo}")
+    return github_repo.get_contents(path, ref=branch)
 
 def main():
     """Execution starts here."""
-    github = get_config()
-    st.write('Hello world')
-    'github', github, id(github)
 
+    # Get a github object from the user's authentication token
+    github = get_config()
+
+    # Test out content_file_from_streamlit_url()
     streamlit_url = "https://share.streamlit.io/shivampurbia/tweety-sentiment-analyis-streamlit-app/main/Tweety.py"
     f"**streamlit_url:** `{streamlit_url}`"
-    github_path = github_path_from_streamlit_url(streamlit_url)
+    content_file = content_file_from_streamlit_url(github, streamlit_url)
+    f"**content_file:**", content_file
+    st.write(dir(content_file))
+    st.code(content_file.decoded_content.decode('utf-8'))
 
+    # Test out content_file_from_streamlit_url()
     github_url = r"https://github.com/tester-burner/test1/blob/main/README.md"
-    github_path = github_path_from_url(github_url)
+    content_file = content_file_from_github_url(github, github_url)
+    f"**content_file:**", content_file
+    st.write(dir(content_file))
+    st.code(content_file.decoded_content.decode('utf-8'), language='markdown')
 
-    'github_path', github_path
-
-    if st.button('Fork the repo'):
-        repo = github.get_repo(f'{github_path.org}/{github_path.repo}')
-        'repo', repo
-        forked_repo = repo.create_fork()
-        'forked_repo', forked_repo
-    
-#     'about to get content file'
-#     content_file = cached_github.get_content_file(github,
-#             github_path.org, github_path.repo, github_path.branch, 'README.md')
-#     '**content_file:**', content_file
-#     st.text(content_file.decoded_content.decode('utf-8'))
-# 
-#     repo = github.get_repo(f"{github_path.org}/{github_path.repo}")
-#     st.help(repo.get_contents)
-# 
-#     st.write(dir(content_file))
-# #     f"**repo:** `{github_path.group('repo')}`"
-# #     f"**branch:** `{github_path.group('branch')}`"
-# #     f"**file:** `{github_path.group('file')}`"
+#       if st.button('Fork the repo'):
+#           repo = github.get_repo(f'{github_path.org}/{github_path.repo}')
+#           'repo', repo
+#           forked_repo = repo.create_fork()
+#           'forked_repo', forked_repo
+#       
 
 # Start execution at the main() function 
 if __name__ == '__main__':
-    main()
+   main()
