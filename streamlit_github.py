@@ -68,6 +68,13 @@ class GithubCoords:
         self.repo = repo
         self.branch = branch
         self.path = path
+        
+    def __str__(self) -> str:
+        return ("<GithubCoords "
+            f"owner:{self.owner} "
+            f"repo:{self.repo} "
+            f"branch:{self.branch} "
+            f"path:{self.path}>")
 
     @staticmethod
     def from_app_url(url: str) -> 'GithubCoords':
@@ -78,10 +85,13 @@ class GithubCoords:
             r"https://share.streamlit.io/"
             r"(?P<owner>[\w-]+)/"
             r"(?P<repo>[\w-]+)/"
-            r"(?P<branch>[\w-]+)/"
+            r"((?P<branch>[\w-]+)/)?"
             r"(?P<path>[\w-]+\.py)"
         )
         matched_url = streamlit_app_url.match(url)
+        if matched_url is None:
+            raise RuntimeError(f"Unable to parse {url} with {streamlit_app_url}")
+
         return GithubCoords(
             matched_url.group('owner'),
             matched_url.group('repo'),
@@ -187,4 +197,9 @@ def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
     shutil.move(temp_path, clone_path)
     st.success(f"Cloned `{forked_repo.git_url}` to `{clone_path}`.")
     return clone_path
+
+def has_streamlit_badge(repo: Repository.Repository) -> bool:
+    readme = repo.get_contents("README.md") 
+    readme_contents = readme.decoded_content.decode('utf-8')
+    return BADGE_URL in readme_contents
 
