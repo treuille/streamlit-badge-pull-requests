@@ -80,6 +80,12 @@ class GithubCoords:
     def from_app_url(url: str) -> 'GithubCoords':
         """Returns the GithubCoords given a Streamlit url."""
 
+        # Convert the url intp a more cannonical form
+        if url.endswith("/"):
+            url = url + "streamlit_app.py"
+        elif not url.endswith(".py"):
+            url = url + "/streamlit_app.py"
+
         # Parse the Stremalit URL into component parts
         streamlit_app_url = re.compile(
             r"https://share.streamlit.io/"
