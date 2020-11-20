@@ -58,7 +58,7 @@ def parse_s4a_apps(github: GithubMainClass.Github):
         with st.beta_expander(app.app_url):
             st.write(app)
             coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
-            st.write('coords', i, coords)
+            st.write('coords', i)
             st.write({attr:getattr(coords, attr)
                 for attr in ['owner', 'repo', 'branch', 'path']})
             repo = coords.get_repo(github)

@@ -183,7 +183,6 @@ def get_streamlit_files(github, github_login):
 def get_readme(repo: Repository.Repository) -> ContentFile.ContentFile:
     """Gets the readme for this repo."""
     contents = repo.get_contents("")
-    st.write('contents', contents)
     for content_file in contents:
         if content_file.name.lower() == "readme.md":
             return content_file
