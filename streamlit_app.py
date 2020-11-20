@@ -24,8 +24,31 @@ def get_s4a_apps() -> pd.DataFrame:
     apps.drop('Unnamed: 0', axis=1, inplace=True)
     return apps
 
-def parse_s4a_apps(github: GithubMainClass.Github):
+def select_apps() -> pd.DataFrame:
+    """Give the user a selection interface with which to select a set
+    of apps to process. Displays and returns the selected apps."""
+
+    # Get the app dataframe
     apps = get_s4a_apps()
+
+    # Display the selector
+    st.write("## Apps")
+
+    # Let the user select which apps to focus on.
+    first_app_index, last_app_index = \
+       st.slider("Select apps", 0, len(apps), (0, 1))
+    if first_app_index >= last_app_index:
+        raise RuntimeError('Must select at least one app.')
+    selected_apps = apps[first_app_index:last_app_index].copy()
+    st.write(f"Selected `{len(selected_apps)} / {len(apps)}` apps.")
+    st.write(selected_apps)
+
+    return select_apps
+
+def parse_s4a_apps(github: GithubMainClass.Github):
+    apps = select_apps()
+
+    return
     st.write('## Apps')
     st.write(apps) 
     st.write(apps.columns)
