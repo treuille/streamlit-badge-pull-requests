@@ -20,7 +20,7 @@ def get_config():
 
 @st.cache
 def get_s4a_apps() -> pd.DataFrame:
-    apps = pd.read_csv('sharing_apps.csv')
+    apps = pd.read_csv('sharing_apps_2.csv')
     apps.drop('Unnamed: 0', axis=1, inplace=True)
     return apps
 
@@ -29,7 +29,7 @@ def parse_s4a_apps(github: GithubMainClass.Github):
     st.write('## Apps')
     st.write(apps) 
     st.write(apps.columns)
-    # apps = apps[:100]
+    apps = apps[:10]
     st.write('n_apps', len(apps))
     has_streamlit_badge = []
     for i, app in enumerate(apps.itertuples()):
