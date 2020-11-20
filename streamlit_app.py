@@ -55,24 +55,25 @@ def parse_s4a_apps(github: GithubMainClass.Github):
     st.write('## Output')
     has_streamlit_badge = []
     for i, app in enumerate(apps.itertuples()):
-        st.write(app)
-        st.text(app.app_url)
-        try:
+        with st.beta_expander(app.app_url):
+            st.write(app)
             coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
             st.write('coords', i, coords)
+            st.write({attr:getattr(coords, attr)
+                for attr in ['owner', 'repo', 'branch', 'path']})
             repo = coords.get_repo(github)
-            readme = repo.get_contents("README.md") 
-            readme_contents = readme.decoded_content.decode('utf-8')
-            f"**readme**", readme
-            st.code(readme_contents)
+            with st.beta_columns((1, 20))[1]:
+                readme = streamlit_github.get_readme(repo)
+                readme_contents = readme.decoded_content.decode('utf-8')
+                st.text(readme_contents)
             has_badge = streamlit_github.has_streamlit_badge(repo) 
-        # except (UnknownObjectException, RuntimeError):
-        except UnknownObjectException:
-            has_badge = False
-        except RuntimeError:
-            has_badge = False
-        st.write('has_streamlit_badge', has_badge)
-        has_streamlit_badge.append(has_badge)
+    #        # except (UnknownObjectException, RuntimeError):
+    #        except UnknownObjectException:
+    #            has_badge = False
+    #        except RuntimeError:
+    #            has_badge = False
+            st.write('has_streamlit_badge', has_badge)
+            has_streamlit_badge.append(has_badge)
     apps['has_badge'] = has_streamlit_badge
     st.write("### Processed apps", apps)
     apps.to_csv('out.csv')

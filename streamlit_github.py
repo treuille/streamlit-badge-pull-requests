@@ -83,10 +83,10 @@ class GithubCoords:
         # Parse the Stremalit URL into component parts
         streamlit_app_url = re.compile(
             r"https://share.streamlit.io/"
-            r"(?P<owner>[\w-]+)/"
-            r"(?P<repo>[\w-]+)/"
-            r"((?P<branch>[\w-]+)/)?"
-            r"(?P<path>[\w-]+\.py)"
+            r"(?P<owner>\w[\w\-]*)/"
+            r"(?P<repo>\w[\w\-]*)/"
+            r"((?P<branch>\w[\w\-]*)/)?"
+            r"(?P<path>\w[\w\-/]*\w\.py)"
         )
         matched_url = streamlit_app_url.match(url)
         if matched_url is None:
@@ -174,6 +174,14 @@ def get_streamlit_files(github, github_login):
             # In this case, we have no idea what's going on, so just raise again. 
             raise
 
+def get_readme(repo: Repository.Repository) -> ContentFile.ContentFile:
+    """Gets the readme for this repo."""
+    contents = repo.get_contents("")
+    st.write('contents', contents)
+    for content_file in contents:
+        if content_file.name.lower() == "readme.md":
+            return content_file
+    return None
 
 def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
     """Clones the given repository into the path give by base_path and returns
@@ -199,7 +207,7 @@ def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
     return clone_path
 
 def has_streamlit_badge(repo: Repository.Repository) -> bool:
-    readme = repo.get_contents("README.md") 
+    readme = get_readme(repo)
     readme_contents = readme.decoded_content.decode('utf-8')
     return BADGE_URL in readme_contents
 
