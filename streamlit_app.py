@@ -43,17 +43,16 @@ def select_apps() -> pd.DataFrame:
     st.write(f"Selected `{len(selected_apps)} / {len(apps)}` apps.")
     st.write(selected_apps)
 
-    return select_apps
+    return selected_apps
 
 def parse_s4a_apps(github: GithubMainClass.Github):
     apps = select_apps()
 
-    return
-    st.write('## Apps')
-    st.write(apps) 
-    st.write(apps.columns)
-    apps = apps[:10]
-    st.write('n_apps', len(apps))
+    # Don't do anything until the use clicks this button.
+    if not st.button('Process apps'):
+        return
+
+    st.write('## Output')
     has_streamlit_badge = []
     for i, app in enumerate(apps.itertuples()):
         st.write(app)
@@ -75,6 +74,7 @@ def parse_s4a_apps(github: GithubMainClass.Github):
         st.write('has_streamlit_badge', has_badge)
         has_streamlit_badge.append(has_badge)
     apps['has_badge'] = has_streamlit_badge
+    st.write("### Processed apps", apps)
     apps.to_csv('out.csv')
     st.success('out.csv')
 
