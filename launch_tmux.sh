@@ -24,9 +24,6 @@ if tmux has-session -t ${SESSION_NAME} 2> /dev/null; then
     exit 0
 fi
 
-# Debug
-echo "session does not exist"
-
 # Create a new session and name the first window server.
 tmux new -d -s ${SESSION_NAME} -n ${MAIN_WINDOW}
 
@@ -39,6 +36,9 @@ tmux resize-pane -D 20 -d -t "${SESSION_NAME}:${MAIN_WINDOW}" # doesn't work?
 add_nvim_window streamlit_app
 add_nvim_window streamlit_github
 add_nvim_window streamlit_subprocess
+
+# Source our config file
+tmux source ~/.config/tmux/tmux.conf
 
 # Finally, attach to the session we just created.
 attach_to_session
