@@ -62,6 +62,8 @@ def parse_s4a_apps(github: GithubMainClass.Github):
             st.write({attr:getattr(coords, attr)
                 for attr in ['owner', 'repo', 'branch', 'path']})
             repo = coords.get_repo(github)
+            st.write(dir(repo))
+            raise RuntimeError("Stop execution here.")
             with st.beta_columns((1, 20))[1]:
                 readme = streamlit_github.get_readme(repo)
                 readme_contents = readme.decoded_content.decode('utf-8')
