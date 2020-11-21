@@ -127,17 +127,19 @@ class GithubCoords:
             matched_url.group('path')
         )
 
+    st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True, ttl=600, suppress_st_warning=True)
     def get_repo(self, github: GithubMainClass.Github) -> Repository.Repository:
-        """Get a live reference to the repository pointed
-        by these Github coordinates."""
-
-        return github.get_repo(f"{self.owner}/{self.repo}")
-
-    def get_contents(self, github: GithubMainClass.Github) -> ContentFile.ContentFile:
-        """Get a live reference to the file contents pointed
-        by these Github coordinates."""
-
-        return self.get_repo(github).get_contents(self.path, ref=self.branch)
+        """Returns a cached version of a PyGithub repository with additional
+        metadata which can be used for caching."""
+        st.warning(f"In cached get_repo for `{self.owner}/{self.repo}`.")
+        repo = github.get_repo(f"{self.owner}/{self.repo}") 
+        raise RuntimeError("Stop execution here in get_repo.")
+    
+    #    def get_contents(self, github: GithubMainClass.Github) -> ContentFile.ContentFile:
+    #        """Get a live reference to the file contents pointed
+    #        by these Github coordinates."""
+    #
+    #        return self.get_repo(github).get_contents(self.path, ref=self.branch)
 
 @rate_limit
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS)
