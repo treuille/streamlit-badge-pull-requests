@@ -49,7 +49,7 @@ def parse_s4a_apps(github: GithubMainClass.Github):
     apps = select_apps()
 
     # Don't do anything until the use clicks this button.
-    if not st.button('Process apps'):
+    if not (st.checkbox("Auto-process apps") or st.button('Process apps')):
         return
 
     st.write('## Output')
