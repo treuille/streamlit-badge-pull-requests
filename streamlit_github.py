@@ -30,9 +30,6 @@ def hash_repo(repo):
     st.warning(f"`hash_repo` -> `{repo._streamlit_hash}`")
     return repo._streamlit_hash
 
-def hash_github_coords(coords):
-    raise RuntimeError('hash_github_coords')
-
 # This dictionary of hash functions allows you to safely intermix PyGithub
 # with Streamit caching.
 GITHUB_HASH_FUNCS = {
@@ -40,7 +37,6 @@ GITHUB_HASH_FUNCS = {
     NamedUser.NamedUser: _get_attr_func('login'),
     ContentFile.ContentFile: _get_attr_func('download_url'),
     Repository.Repository: hash_repo,
-    "streamlit_github.GithubCoords": hash_github_coords,
 }
 
 def rate_limit(func):
@@ -136,10 +132,12 @@ class GithubCoords:
             matched_url.group('path')
         )
 
-    st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True, ttl=600, suppress_st_warning=True)
+    # st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True, ttl=600, suppress_st_warning=True)
+    @st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True, ttl=600)
     def get_repo(self, github: GithubMainClass.Github) -> Repository.Repository:
         """Returns a cached version of a PyGithub repository with additional
         metadata which can be used for caching."""
+        # Insert some debug information here to see if we're in the cached function.
         st.warning(f"In cached get_repo for `{self.owner}/{self.repo}`.")
 
         # Get the underlying github repo.
