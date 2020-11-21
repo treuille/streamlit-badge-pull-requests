@@ -7,6 +7,7 @@ import os
 import tempfile
 import math
 import time
+import datetime
 import shutil
 import re
 from datetime import datetime
@@ -25,13 +26,21 @@ def _get_attr_func(attr):
         return getattr(obj, attr)
     return get_attr_func
 
+def hash_repo(repo):
+    st.warning(f"`hash_repo` -> `{repo._streamlit_hash}`")
+    return repo._streamlit_hash
+
+def hash_github_coords(coords):
+    raise RuntimeError('hash_github_coords')
+
 # This dictionary of hash functions allows you to safely intermix PyGithub
 # with Streamit caching.
 GITHUB_HASH_FUNCS = {
     GithubMainClass.Github: lambda _: None,
     NamedUser.NamedUser: _get_attr_func('login'),
     ContentFile.ContentFile: _get_attr_func('download_url'),
-    Repository.Repository: _get_attr_func('git_url'),
+    Repository.Repository: hash_repo,
+    "streamlit_github.GithubCoords": hash_github_coords,
 }
 
 def rate_limit(func):
@@ -132,14 +141,31 @@ class GithubCoords:
         """Returns a cached version of a PyGithub repository with additional
         metadata which can be used for caching."""
         st.warning(f"In cached get_repo for `{self.owner}/{self.repo}`.")
+
+        # Get the underlying github repo.
         repo = github.get_repo(f"{self.owner}/{self.repo}") 
-        raise RuntimeError("Stop execution here in get_repo.")
+
+        # Figure out the most recent modification time
+        repo_last_modified = datetime.min
+        for branch in repo.get_branches():
+            branch_last_modified = branch.commit.commit.committer.date
+            if branch_last_modified > repo_last_modified:
+                repo_last_modified = branch_last_modified  
+
+        # Give this repo a hash which represents the most recent modification time.
+        repo._streamlit_hash = f"{self.owner}/{self.repo} @ {repo_last_modified}"
+        st.write(f'repo._streamlit_hash: `{repo._streamlit_hash}`')
+
+        return repo
+
     
     #    def get_contents(self, github: GithubMainClass.Github) -> ContentFile.ContentFile:
     #        """Get a live reference to the file contents pointed
     #        by these Github coordinates."""
     #
     #        return self.get_repo(github).get_contents(self.path, ref=self.branch)
+
+st.warning(f"GithubCoords: `{GithubCoords.__name__}`")
 
 @rate_limit
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS)

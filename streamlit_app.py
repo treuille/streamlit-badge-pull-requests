@@ -55,13 +55,24 @@ def parse_s4a_apps(github: GithubMainClass.Github):
     st.write('## Output')
     has_streamlit_badge = []
     for i, app in enumerate(apps.itertuples()):
-        with st.beta_expander(app.app_url):
+        with st.beta_expander(app.app_url, expanded=False):
             st.write(app)
             coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
+            st.warning(f"GithubCoords other side: `{streamlit_github.GithubCoords.__name__}`")
             st.write('coords', i)
             st.write({attr:getattr(coords, attr)
                 for attr in ['owner', 'repo', 'branch', 'path']})
             repo = coords.get_repo(github)
+            st.write(repo)
+            @st.cache(hash_funcs=streamlit_github.GITHUB_HASH_FUNCS, suppress_st_warning=True)
+            def cached_repo_function(repo):
+                st.warning("In `cached_repo_function`.")
+                return dir(repo)
+            st.write("repo props", cached_repo_function(repo))
+            raise RuntimeError('Testing the repo caching now.')
+
+            # st.write(repo._streamlit_hash)
+            continue
             with st.beta_columns((1, 20))[1]:
                 readme = streamlit_github.get_readme(repo)
                 readme_contents = readme.decoded_content.decode('utf-8')
@@ -77,7 +88,7 @@ def parse_s4a_apps(github: GithubMainClass.Github):
     apps['has_badge'] = has_streamlit_badge
     st.write("### Processed apps", apps)
     apps.to_csv('out.csv')
-    st.success('out.csv')
+    t.success('out.csv')
 
 def main():
     """Execution starts here."""
