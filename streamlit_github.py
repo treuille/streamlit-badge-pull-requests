@@ -88,9 +88,7 @@ class GithubCoords:
         """Returns the GithubCoords given a Streamlit url."""
 
         # Convert the url intp a more cannonical form
-        st.write(f"url before: `{url}`")
         url = urllib.parse.unquote(url)
-        st.write(f"url after: `{url}`")
         if not url.startswith("https://share.streamlit.io/"):
             return None
         if url.endswith("/"):

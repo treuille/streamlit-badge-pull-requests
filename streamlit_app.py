@@ -55,9 +55,11 @@ def filter_apps(apps: pd.DataFrame) -> pd.DataFrame:
 @st.cache(hash_funcs=streamlit_github.GITHUB_HASH_FUNCS, persist=True,
             suppress_st_warning=True, ttl=(60 * 60 * 6)) 
 def compute_app_status(apps: pd.DataFrame, config: ConfigOptions, github: GithubMainClass.Github):
-    # Whether to tunrn app details on by default.
+    """Adds a "status" column to the app DataFrame which indicates that
+    whether the app has a badge or not and / or whether there was an
+    error processing the app for some reason."""
 
-    st.write('## Output')
+    st.write("## Computing app status")
 
     # These are the additional columns which we're going to add
     status_column = []
@@ -67,14 +69,11 @@ def compute_app_status(apps: pd.DataFrame, config: ConfigOptions, github: Github
             try:
                 st.write(app)
                 
-                st.write(f"app.app_url: `{repr(app.app_url)} {type(app.app_url)}`")
                 if app.app_url is None or app.app_url == "None":
                     raise ForkAppError("No URL")
 
                 # Parse out the coordinates for this repo.
-                st.write(f"app.app_url: `{repr(app.app_url)}`")
                 coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
-                st.write('coords', coords)
                 if coords == None:
                     raise ForkAppError("Unable to parse URL")
                 st.write({attr:getattr(coords, attr)
@@ -83,7 +82,6 @@ def compute_app_status(apps: pd.DataFrame, config: ConfigOptions, github: Github
                 # Get the repo.
                 repo = coords.get_repo(github)
                 st.write("repo", repo)
-
                 # Show the readme if possible.
                 if repo is None:
                     raise ForkAppError("Repo does not exist")
@@ -111,14 +109,8 @@ def compute_app_status(apps: pd.DataFrame, config: ConfigOptions, github: Github
             status_column.append(app_status)
         
     # Assign these new columns to the app DataFrame.
-    st.write("Apps before:", type(apps), type(apps))
     apps = apps.assign(status=status_column)
-    st.write("Apps after:", type(apps))
     return apps
-
-    # Print some results
-    # apps.to_csv('out.csv')
-    # st.success('out.csv')
 
 def main():
     """Execution starts here."""
@@ -136,9 +128,7 @@ def main():
     if not (config.auto_process_apps or st.button('Process apps')):
         return
 
-    st.write("Filtered apps:", type(apps))
     apps = compute_app_status(apps, config, github)
-    st.write("Computed apps:", type(apps))
 
     st.write("### Processed apps")
     st.write(apps)
