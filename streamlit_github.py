@@ -16,6 +16,7 @@ from github import NamedUser
 from github import ContentFile
 from github import Repository
 from github import RateLimitExceededException
+from github import UnknownObjectException
 from github import GithubException
 from github import MainClass as GithubMainClass
 
@@ -139,8 +140,11 @@ class GithubCoords:
         # Insert some debug information here to see if we're in the cached function.
         st.warning(f"In cached get_repo for `{self.owner}/{self.repo}`.")
 
-        # Get the underlying github repo.
-        repo = github.get_repo(f"{self.owner}/{self.repo}") 
+        # Get the underlying github repo, or None if it doesn't exist.
+        try:
+            repo = github.get_repo(f"{self.owner}/{self.repo}") 
+        except UnknownObjectException:
+            return None
 
         # Figure out the most recent modification time
         repo_last_modified = datetime.min

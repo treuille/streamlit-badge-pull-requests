@@ -58,8 +58,13 @@ def parse_s4a_apps(github: GithubMainClass.Github):
         return
 
     st.write('## Output')
-    has_readme = []
-    has_badge = []
+
+    # These are the additional columns which we're going to add
+    # to the apps DataFrame
+    exists_column = []
+    has_readme_column = []
+    has_badge_column = []
+
     for i, app in enumerate(apps.itertuples()):
         with st.beta_expander(app.app_url, expanded=auto_expand):
             st.write(app)
@@ -73,24 +78,30 @@ def parse_s4a_apps(github: GithubMainClass.Github):
             st.write(repo)
 
             # Show the readme if possible.
-            repo_has_readme = streamlit_github.get_readme(repo) is not None
-            st.write(f"repo_has_readme: `{repo_has_readme}`")
-            if repo_has_readme and show_readmes:
-                with st.beta_columns((1, 20))[1]:
+            repo_exists = repo is not None
+            if repo_exists:
+                repo_has_readme = streamlit_github.get_readme(repo) is not None
+                st.write(f"repo_has_readme: `{repo_has_readme}`")
+                if repo_has_readme and show_readmes:
                     readme = streamlit_github.get_readme(repo)
                     readme_contents = readme.decoded_content.decode('utf-8')
-                    st.text(readme_contents)
-            repo_has_badge = streamlit_github.has_streamlit_badge(repo) 
-    #        # except (UnknownObjectException, RuntimeError):
-    #        except UnknownObjectException:
-    #            repo_has_badge = False
-    #        except RuntimeError:
-    #            has_uadge = False
-            st.write('has_badge', repo_has_badge)
-            has_readme.append(repo_has_readme)
-            has_badge.append(repo_has_badge)
-    apps['has_readme'] = has_readme
-    apps['has_badge'] = has_badge
+                    st.beta_columns((1, 20))[1].text(readme_contents)
+                repo_has_badge = streamlit_github.has_streamlit_badge(repo) 
+                st.write('has_badge', repo_has_badge)
+            else:
+                repo_has_readme = False
+                repo_has_badge = False
+
+            # Fill in these entries in the new columns
+            exists_column.append(repo_exists)
+            has_readme_column.append(repo_has_readme)
+            has_badge_column.append(repo_has_badge)
+        
+    # Assign these new columns to the app DataFrame.
+    apps['exist'] = exists_column
+    apps['has_readme'] = has_readme_column
+    apps['has_badge'] = has_badge_column
+
     st.write("### Processed apps", apps)
     apps.to_csv('out.csv')
     st.success('out.csv')
