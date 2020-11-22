@@ -91,6 +91,8 @@ class GithubCoords:
         st.write(f"url before: `{url}`")
         url = urllib.parse.unquote(url)
         st.write(f"url after: `{url}`")
+        if not url.startswith("https://share.streamlit.io/"):
+            return None
         if url.endswith("/"):
             url = url + "streamlit_app.py"
         elif not url.endswith(".py"):

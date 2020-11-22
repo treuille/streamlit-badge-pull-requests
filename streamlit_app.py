@@ -45,6 +45,14 @@ def select_apps() -> pd.DataFrame:
 
     return selected_apps
 
+class ForkAppError(Exception):
+    """Represents a mistake that could happen when trying to fork an app."""
+
+    def __init__(self, reason):
+        """Constructor."""
+        Exception.__init__(self, reason)
+        self.reason = reason
+
 def parse_s4a_apps(github: GithubMainClass.Github):
     apps = select_apps()
 
@@ -60,28 +68,23 @@ def parse_s4a_apps(github: GithubMainClass.Github):
     st.write('## Output')
 
     # These are the additional columns which we're going to add
-    # to the apps DataFrame
-    exists_column = []
-    has_readme_column = []
-    has_badge_column = []
+    status_column = []
 
     for i, app in enumerate(apps.itertuples()):
         with st.beta_expander(app.app_url, expanded=auto_expand):
-            st.write(app)
-            
-            repo_exists = True
-            repo_has_readme = False
-            repo_has_badge = False
+            try:
+                st.write(app)
+                
+                st.write(f"app.app_url: `{repr(app.app_url)} {type(app.app_url)}`")
+                if app.app_url is None or app.app_url == "None":
+                    raise ForkAppError("No URL")
 
-            st.write(f"app.app_url: `{repr(app.app_url)} {type(app.app_url)}`")
-            if app.app_url is None or app.app_url == "None":
-                # Nothing we can do here so we'll say it doesn't exist.
-                repo_exists = False
-            else:
                 # Parse out the coordinates for this repo.
                 st.write(f"app.app_url: `{repr(app.app_url)}`")
                 coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
-                st.write('coords', i)
+                st.write('coords', coords)
+                if coords == None:
+                    raise ForkAppError("Unable to parse URL")
                 st.write({attr:getattr(coords, attr)
                     for attr in ['owner', 'repo', 'branch', 'path']})
 
@@ -91,26 +94,32 @@ def parse_s4a_apps(github: GithubMainClass.Github):
 
                 # Show the readme if possible.
                 if repo is None:
-                    repo_exists = False
+                    raise ForkAppError("Repo does not exist")
+
+                readme = streamlit_github.get_readme(repo)
+                if readme is None:
+                    raise ForkAppError("Readme does not exist")
+
+                if show_readmes:
+                    readme_contents = readme.decoded_content.decode('utf-8')
+                    st.beta_columns((1, 20))[1].text(readme_contents)
+
+                if streamlit_github.has_streamlit_badge(repo):
+                    app_status = "Has badge"
                 else:
-                    repo_has_readme = streamlit_github.get_readme(repo) is not None
-                    st.write(f"repo_has_readme: `{repo_has_readme}`")
-                    if repo_has_readme and show_readmes:
-                        readme = streamlit_github.get_readme(repo)
-                        readme_contents = readme.decoded_content.decode('utf-8')
-                        st.beta_columns((1, 20))[1].text(readme_contents)
-                    repo_has_badge = streamlit_github.has_streamlit_badge(repo) 
-                    st.write('has_badge', repo_has_badge)
-                    
-            # Fill in these entries in the new columns
-            exists_column.append(repo_exists)
-            has_readme_column.append(repo_has_readme)
-            has_badge_column.append(repo_has_badge)
+                    app_status = "No badge"
+            except ForkAppError as e:
+                app_status = f"ForkAppError: {e.reason}"
+            except Exception as e:
+                app_status = str(type(e))
+
+            st.write(f"app_status: '{app_status}'")
+
+            # Fill in the status column
+            status_column.append(app_status)
         
     # Assign these new columns to the app DataFrame.
-    apps['exist'] = exists_column
-    apps['has_readme'] = has_readme_column
-    apps['has_badge'] = has_badge_column
+    apps['status'] = status_column
 
     st.write("### Processed apps", apps)
     apps.to_csv('out.csv')
