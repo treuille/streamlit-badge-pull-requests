@@ -48,6 +48,9 @@ def select_apps() -> pd.DataFrame:
 def parse_s4a_apps(github: GithubMainClass.Github):
     apps = select_apps()
 
+    # Whether to tunrn app details on by default.
+    auto_expand = st.sidebar.checkbox('Auto-expand app display')
+
     # Don't do anything until the use clicks this button.
     if not (st.checkbox("Auto-process apps") or st.button('Process apps')):
         return
@@ -55,7 +58,7 @@ def parse_s4a_apps(github: GithubMainClass.Github):
     st.write('## Output')
     has_streamlit_badge = []
     for i, app in enumerate(apps.itertuples()):
-        with st.beta_expander(app.app_url, expanded=False):
+        with st.beta_expander(app.app_url, expanded=auto_expand):
             st.write(app)
             coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
             st.warning(f"GithubCoords: `{streamlit_github.GithubCoords.__name__}`")
