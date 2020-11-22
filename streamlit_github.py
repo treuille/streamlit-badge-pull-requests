@@ -10,6 +10,7 @@ import time
 import datetime
 import shutil
 import re
+import urllib.parse
 from datetime import datetime
 from github import Github
 from github import NamedUser
@@ -87,6 +88,9 @@ class GithubCoords:
         """Returns the GithubCoords given a Streamlit url."""
 
         # Convert the url intp a more cannonical form
+        st.write(f"url before: `{url}`")
+        url = urllib.parse.unquote(url)
+        st.write(f"url after: `{url}`")
         if url.endswith("/"):
             url = url + "streamlit_app.py"
         elif not url.endswith(".py"):
