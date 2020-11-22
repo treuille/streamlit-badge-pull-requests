@@ -97,8 +97,8 @@ class GithubCoords:
             r"https://share.streamlit.io/"
             r"(?P<owner>\w[\w\-]*)/"
             r"(?P<repo>\w[\w\-]*)/"
-            r"((?P<branch>\w[\w\-]*)/)?"
-            r"(?P<path>\w[\w\-/]*\w\.py)"
+            r"((?P<branch>\w[\w\-\.]*)/)?"
+            r"(?P<path>\w[\w\-/\.]*\w\.py)"
         )
         matched_url = streamlit_app_url.match(url)
         if matched_url is None:

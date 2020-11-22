@@ -68,30 +68,40 @@ def parse_s4a_apps(github: GithubMainClass.Github):
     for i, app in enumerate(apps.itertuples()):
         with st.beta_expander(app.app_url, expanded=auto_expand):
             st.write(app)
-            coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
-            st.write('coords', i)
-            st.write({attr:getattr(coords, attr)
-                for attr in ['owner', 'repo', 'branch', 'path']})
+            
+            repo_exists = True
+            repo_has_readme = False
+            repo_has_badge = False
 
-            # Get the repo.
-            repo = coords.get_repo(github)
-            st.write(repo)
-
-            # Show the readme if possible.
-            repo_exists = repo is not None
-            if repo_exists:
-                repo_has_readme = streamlit_github.get_readme(repo) is not None
-                st.write(f"repo_has_readme: `{repo_has_readme}`")
-                if repo_has_readme and show_readmes:
-                    readme = streamlit_github.get_readme(repo)
-                    readme_contents = readme.decoded_content.decode('utf-8')
-                    st.beta_columns((1, 20))[1].text(readme_contents)
-                repo_has_badge = streamlit_github.has_streamlit_badge(repo) 
-                st.write('has_badge', repo_has_badge)
+            st.write(f"app.app_url: `{repr(app.app_url)} {type(app.app_url)}`")
+            if app.app_url is None or app.app_url == "None":
+                # Nothing we can do here so we'll say it doesn't exist.
+                repo_exists = False
             else:
-                repo_has_readme = False
-                repo_has_badge = False
+                # Parse out the coordinates for this repo.
+                st.write(f"app.app_url: `{repr(app.app_url)}`")
+                coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
+                st.write('coords', i)
+                st.write({attr:getattr(coords, attr)
+                    for attr in ['owner', 'repo', 'branch', 'path']})
 
+                # Get the repo.
+                repo = coords.get_repo(github)
+                st.write("repo", repo)
+
+                # Show the readme if possible.
+                if repo is None:
+                    repo_exists = False
+                else:
+                    repo_has_readme = streamlit_github.get_readme(repo) is not None
+                    st.write(f"repo_has_readme: `{repo_has_readme}`")
+                    if repo_has_readme and show_readmes:
+                        readme = streamlit_github.get_readme(repo)
+                        readme_contents = readme.decoded_content.decode('utf-8')
+                        st.beta_columns((1, 20))[1].text(readme_contents)
+                    repo_has_badge = streamlit_github.has_streamlit_badge(repo) 
+                    st.write('has_badge', repo_has_badge)
+                    
             # Fill in these entries in the new columns
             exists_column.append(repo_exists)
             has_readme_column.append(repo_has_readme)
