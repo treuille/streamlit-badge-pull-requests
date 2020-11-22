@@ -50,9 +50,10 @@ def parse_s4a_apps(github: GithubMainClass.Github):
 
     # Whether to tunrn app details on by default.
     auto_expand = st.sidebar.checkbox('Auto-expand app display')
+    auto_process_apps = st.sidebar.checkbox("Auto-process apps")
 
     # Don't do anything until the use clicks this button.
-    if not (st.checkbox("Auto-process apps") or st.button('Process apps')):
+    if not (auto_process_apps or st.button('Process apps')):
         return
 
     st.write('## Output')
