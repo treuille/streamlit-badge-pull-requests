@@ -3,6 +3,7 @@ Streamlit sharing apps."""
 
 import streamlit as st
 import streamlit_github
+import numpy as np
 import pandas as pd
 from github import MainClass as GithubMainClass
 from github.GithubException import UnknownObjectException
@@ -112,6 +113,51 @@ def compute_app_status(apps: pd.DataFrame, config: ConfigOptions, github: Github
     apps = apps.assign(status=status_column)
     return apps
 
+# def display_badge_statistics(apps: pd.DataFrame) -> None:
+#     """Displays a bunch of statistics about apps with and without badges."""
+#     st.write("## Badge statistics")
+#     no_badges = apps["status"] == "No badge"
+#     yes_badges = apps["status"] == "Has badge"
+#     error_apps = ~(no_badges | yes_badges)
+#     st.write("no badges", np.sum(no_badges))
+#     st.write("yes badges", np.sum(yes_badges))
+#     st.write("error apps", np.sum(error_apps))
+#     st.write('App sums', (np.sum(no_badges) + np.sum(yes_badges) + np.sum(error_apps)), 
+#             len(apps))
+#     statuses = set(apps.status)
+#     st.write({status:int(np.sum(apps.status == status)) for status in statuses})
+#     st.bar_chart(apps.status.value_counts())
+#     st.write(apps.columns)
+#     st.write(apps.daily_views.min(), apps.daily_views.max())
+#     st.write(apps.weekly_views.min(), apps.weekly_views.max())
+#     bins = np.arange(0, 51, 5)
+#     st.write('bins', bins)
+#     st.write('dtype', apps.daily_views.dtype)
+#     histogram = pd.cut(apps.daily_views, bins=bins)
+#     st.write(type(histogram), histogram.dtype, len(histogram))
+#     st.text(histogram)
+#     st.text(histogram.value_counts())
+#     st.help(st.bar_chart)
+    
+#     # # Generating Data
+#     # source = pd.DataFrame({
+#     #     'Trial A': np.random.normal(0, 0.8, 1000),
+#     #     'Trial B': np.random.normal(-2, 1, 1000),
+#     #     'Trial C': np.random.normal(3, 2, 1000)
+#     # })
+
+#     # alt.Chart(source).transform_fold(
+#     #     ['Trial A', 'Trial B', 'Trial C'],
+#     #     as_=['Experiment', 'Measurement']
+#     # ).mark_area(
+#     #     opacity=0.3,
+#     #     interpolate='step'
+#     # ).encode(
+#     #     alt.X('Measurement:Q', bin=alt.Bin(maxbins=100)),
+#     #     alt.Y('count()', stack=None),
+#     #     alt.Color('Experiment:N')
+#     # )
+
 def main():
     """Execution starts here."""
     # These are all the options the user can set
@@ -129,9 +175,11 @@ def main():
         return
 
     apps = compute_app_status(apps, config, github)
-
     st.write("### Processed apps")
     st.write(apps)
+
+    # Display some summary statistics on what the badges are doing
+    # display_badge_statistics(apps)
 
 #     if st.button('Fork the repo'):
 #         repo = coords.get_repo(github)
