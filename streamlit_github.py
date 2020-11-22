@@ -137,7 +137,9 @@ class GithubCoords:
             matched_url.group('path')
         )
 
-    @st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True, ttl=600, suppress_st_warning=True)
+    # Hold repos in the cache for 6 hours.
+    @st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True, suppress_st_warning=True,
+            ttl=(60 * 60 * 6)) 
     def get_repo(self, github: GithubMainClass.Github) -> Repository.Repository:
         """Returns a cached version of a PyGithub repository with additional
         metadata which can be used for caching."""
