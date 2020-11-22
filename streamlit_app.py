@@ -51,6 +51,7 @@ def parse_s4a_apps(github: GithubMainClass.Github):
     # Whether to tunrn app details on by default.
     auto_expand = st.sidebar.checkbox('Auto-expand app display')
     auto_process_apps = st.sidebar.checkbox("Auto-process apps")
+    show_readmes = st.sidebar.checkbox("Show readme contents")
 
     # Don't do anything until the use clicks this button.
     if not (auto_process_apps or st.button('Process apps')):
@@ -66,26 +67,14 @@ def parse_s4a_apps(github: GithubMainClass.Github):
             st.write('coords', i)
             st.write({attr:getattr(coords, attr)
                 for attr in ['owner', 'repo', 'branch', 'path']})
-            repo_1 = coords.get_repo(github)
-            repo_2 = coords.get_repo(github)
-            st.write("repos", id(repo_1), id(repo_2), (id(repo_1) == id(repo_2))) 
-            raise RuntimeError("Just displayed the two repos.")
             repo = coords.get_repo(github)
             st.write(repo)
-            @st.cache(hash_funcs=streamlit_github.GITHUB_HASH_FUNCS, suppress_st_warning=True)
-            def cached_repo_function(repo):
-                st.warning("In `cached_repo_function`.")
-                return dir(repo)
-            st.write("repo props", cached_repo_function(repo))
-            raise RuntimeError('Testing the repo caching now.')
-
-            # # st.write(repo._streamlit_hash)
-            # continue
-            # with st.beta_columns((1, 20))[1]:
-            #     readme = streamlit_github.get_readme(repo)
-            #     readme_contents = readme.decoded_content.decode('utf-8')
-            #     st.text(readme_contents)
-            # has_badge = streamlit_github.has_streamlit_badge(repo) 
+            if show_readmes:
+                with st.beta_columns((1, 20))[1]:
+                    readme = streamlit_github.get_readme(repo)
+                    readme_contents = readme.decoded_content.decode('utf-8')
+                    st.text(readme_contents)
+            has_badge = streamlit_github.has_streamlit_badge(repo) 
     #        # except (UnknownObjectException, RuntimeError):
     #        except UnknownObjectException:
     #            has_badge = False

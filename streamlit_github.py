@@ -205,7 +205,7 @@ def get_streamlit_files(github, github_login):
             # In this case, we have no idea what's going on, so just raise again. 
             raise
 
-@st.cache(hash_funcs=GITHUB_HASH_FUNCS)
+@st.cache(hash_funcs=GITHUB_HASH_FUNCS, suppress_st_warning=True)
 def get_readme(repo: Repository.Repository) -> ContentFile.ContentFile:
     """Gets the readme for this repo."""
     contents = repo.get_contents("")
@@ -239,7 +239,7 @@ def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
     st.success(f"Cloned `{forked_repo.git_url}` to `{clone_path}`.")
     return clone_path
 
-@st.cache(hash_funcs=GITHUB_HASH_FUNCS)
+@st.cache(hash_funcs=GITHUB_HASH_FUNCS, suppress_st_warning=True)
 def has_streamlit_badge(repo: Repository.Repository) -> bool:
     readme = get_readme(repo)
     readme_contents = readme.decoded_content.decode('utf-8')
