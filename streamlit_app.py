@@ -58,31 +58,39 @@ def parse_s4a_apps(github: GithubMainClass.Github):
         return
 
     st.write('## Output')
-    has_streamlit_badge = []
+    has_readme = []
+    has_badge = []
     for i, app in enumerate(apps.itertuples()):
         with st.beta_expander(app.app_url, expanded=auto_expand):
             st.write(app)
             coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
-            st.warning(f"GithubCoords: `{streamlit_github.GithubCoords.__name__}`")
             st.write('coords', i)
             st.write({attr:getattr(coords, attr)
                 for attr in ['owner', 'repo', 'branch', 'path']})
+
+            # Get the repo.
             repo = coords.get_repo(github)
             st.write(repo)
-            if show_readmes:
+
+            # Show the readme if possible.
+            repo_has_readme = streamlit_github.get_readme(repo) is not None
+            st.write(f"repo_has_readme: `{repo_has_readme}`")
+            if repo_has_readme and show_readmes:
                 with st.beta_columns((1, 20))[1]:
                     readme = streamlit_github.get_readme(repo)
                     readme_contents = readme.decoded_content.decode('utf-8')
                     st.text(readme_contents)
-            has_badge = streamlit_github.has_streamlit_badge(repo) 
+            repo_has_badge = streamlit_github.has_streamlit_badge(repo) 
     #        # except (UnknownObjectException, RuntimeError):
     #        except UnknownObjectException:
-    #            has_badge = False
+    #            repo_has_badge = False
     #        except RuntimeError:
-    #            has_badge = False
-            st.write('has_streamlit_badge', has_badge)
-            has_streamlit_badge.append(has_badge)
-    apps['has_badge'] = has_streamlit_badge
+    #            has_uadge = False
+            st.write('has_badge', repo_has_badge)
+            has_readme.append(repo_has_readme)
+            has_badge.append(repo_has_badge)
+    apps['has_readme'] = has_readme
+    apps['has_badge'] = has_badge
     st.write("### Processed apps", apps)
     apps.to_csv('out.csv')
     st.success('out.csv')
@@ -108,7 +116,7 @@ def main():
 #     f"**repo**", repo, repo.git_url
 #     st.write(dir(repo))
 #     st.code(readme_contents)
-#     'has_badge', streamlit_github.BADGE_URL in readme_contents
+#     'repo_has_badge', streamlit_github.BADGE_URL in readme_contents
 #     # st.code(content_file.
 
 #     # Test out content_file_from_app_url()
@@ -126,4 +134,5 @@ def main():
 
 # Start execution at the main() function 
 if __name__ == '__main__':
+
    main()

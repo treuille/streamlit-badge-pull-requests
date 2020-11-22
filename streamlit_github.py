@@ -162,8 +162,6 @@ class GithubCoords:
     #
     #        return self.get_repo(github).get_contents(self.path, ref=self.branch)
 
-st.warning(f"GithubCoords: `{GithubCoords.__name__}`")
-
 @rate_limit
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS)
 def from_access_token(access_token):
@@ -207,14 +205,23 @@ def get_streamlit_files(github, github_login):
 
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS, suppress_st_warning=True)
 def get_readme(repo: Repository.Repository) -> ContentFile.ContentFile:
-    """Gets the readme for this repo."""
+    """Gets the readme for this repo, or None if the repo has none."""
     contents = repo.get_contents("")
     for content_file in contents:
         if content_file.name.lower() == "readme.md":
             return content_file
     return None
 
-# Shouldn't be st.cached because this has a side effect.
+@st.cache(hash_funcs=GITHUB_HASH_FUNCS, suppress_st_warning=True)
+def has_streamlit_badge(repo: Repository.Repository) -> bool:
+    readme = get_readme(repo)
+    if readme:
+        readme_contents = readme.decoded_content.decode('utf-8')
+        return BADGE_URL in readme_contents
+    else:
+        return False
+
+    # Shouldn't be st.cached because this has a side effect.
 def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
     """Clones the given repository into the path give by base_path and returns
     the root path of the repository."""
@@ -239,9 +246,4 @@ def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
     st.success(f"Cloned `{forked_repo.git_url}` to `{clone_path}`.")
     return clone_path
 
-@st.cache(hash_funcs=GITHUB_HASH_FUNCS, suppress_st_warning=True)
-def has_streamlit_badge(repo: Repository.Repository) -> bool:
-    readme = get_readme(repo)
-    readme_contents = readme.decoded_content.decode('utf-8')
-    return BADGE_URL in readme_contents
 
