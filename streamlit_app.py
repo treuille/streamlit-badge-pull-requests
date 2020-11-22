@@ -24,12 +24,9 @@ def get_s4a_apps() -> pd.DataFrame:
     apps.drop('Unnamed: 0', axis=1, inplace=True)
     return apps
 
-def select_apps() -> pd.DataFrame:
+def filter_apps(apps: pd.DataFrame) -> pd.DataFrame:
     """Give the user a selection interface with which to select a set
     of apps to process. Displays and returns the selected apps."""
-
-    # Get the app dataframe
-    apps = get_s4a_apps()
 
     # Display the selector
     st.write("## Apps")
@@ -53,9 +50,7 @@ class ForkAppError(Exception):
         Exception.__init__(self, reason)
         self.reason = reason
 
-def parse_s4a_apps(github: GithubMainClass.Github):
-    apps = select_apps()
-
+def parse_s4a_apps(apps: pd.DataFrame, github: GithubMainClass.Github):
     # Whether to tunrn app details on by default.
     auto_expand = st.sidebar.checkbox('Auto-expand app display')
     auto_process_apps = st.sidebar.checkbox("Auto-process apps")
@@ -122,17 +117,22 @@ def parse_s4a_apps(github: GithubMainClass.Github):
     apps['status'] = status_column
 
     st.write("### Processed apps", apps)
-    apps.to_csv('out.csv')
-    st.success('out.csv')
+
+
+
+    # Print some results
+    # apps.to_csv('out.csv')
+    # st.success('out.csv')
 
 def main():
     """Execution starts here."""
-
     # Get a github object from the user's authentication token
     github = get_config()
- 
-    st.write('Hello, world! Again!!')
-    parse_s4a_apps(github)
+
+    # Get the app dataframe
+    apps = get_s4a_apps()
+    apps = filter_apps(apps)
+    parse_s4a_apps(apps, github)
 
 #     # Test out content_file_from_app_url()
 #     app_url = "https://share.streamlit.io/shivampurbia/tweety-sentiment-analyis-streamlit-app/main/Tweety.py"
@@ -161,8 +161,19 @@ def main():
 #         'repo', repo
 #         streamlit_github.fork_and_clone_repo(repo, FORK_BASE_PATH)
 
-
+  
 # Start execution at the main() function 
 if __name__ == '__main__':
-
-   main()
+    # Get the app dataframe
+    apps = get_s4a_apps()
+    # Get the app dataframe
+    apps = get_s4a_apps()
+    # Get the app dataframe
+    apps = get_s4a_apps()
+    # Get the app dataframe
+    apps = get_s4a_apps()
+    # Get the app dataframe
+    apps = get_s4a_apps()
+    # Get the app dataframe
+    apps = get_s4a_apps()
+    main()
