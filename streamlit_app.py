@@ -39,10 +39,12 @@ def filter_apps(apps: pd.DataFrame) -> pd.DataFrame:
     """Give the user a selection interface with which to select a set
     of apps to process. Displays and returns the selected apps."""
 
-    # Display the selector
-    st.write("## Apps")
+    # Let the user filter app URLs
+    filter_text = st.text_input('Filter URLs')
+    if filter_text:
+        apps = apps[apps.app_url.str.contains(filter_text)]
 
-    # Let the user select which apps to focus on.
+    # Let the user select a numerical range of apps to work on
     first_app_index, last_app_index = \
        st.slider("Select apps", 0, len(apps), (0, 1))
     if first_app_index >= last_app_index:
@@ -94,6 +96,10 @@ def compute_app_status(apps: pd.DataFrame, config: ConfigOptions, github: Github
                 if config.show_readmes:
                     readme_contents = readme.decoded_content.decode('utf-8')
                     st.beta_columns((1, 20))[1].text(readme_contents)
+    
+                # st.write(dir(repo))
+                if repo.fork:
+                    raise ForkAppError("Repo forks another.")
 
                 if streamlit_github.has_streamlit_badge(repo):
                     app_status = "Has badge"
@@ -101,8 +107,8 @@ def compute_app_status(apps: pd.DataFrame, config: ConfigOptions, github: Github
                     app_status = "No badge"
             except ForkAppError as e:
                 app_status = f"ForkAppError: {e.reason}"
-            except Exception as e:
-                app_status = str(type(e))
+            # except Exception as e:
+            #     app_status = str(type(e))
 
             st.write(f"app_status: '{app_status}'")
 
@@ -113,78 +119,63 @@ def compute_app_status(apps: pd.DataFrame, config: ConfigOptions, github: Github
     apps = apps.assign(status=status_column)
     return apps
 
-# def display_badge_statistics(apps: pd.DataFrame) -> None:
-#     """Displays a bunch of statistics about apps with and without badges."""
-#     st.write("## Badge statistics")
-#     no_badges = apps["status"] == "No badge"
-#     yes_badges = apps["status"] == "Has badge"
-#     error_apps = ~(no_badges | yes_badges)
-#     st.write("no badges", np.sum(no_badges))
-#     st.write("yes badges", np.sum(yes_badges))
-#     st.write("error apps", np.sum(error_apps))
-#     st.write('App sums', (np.sum(no_badges) + np.sum(yes_badges) + np.sum(error_apps)), 
-#             len(apps))
-#     statuses = set(apps.status)
-#     st.write({status:int(np.sum(apps.status == status)) for status in statuses})
-#     st.bar_chart(apps.status.value_counts())
-#     st.write(apps.columns)
-#     st.write(apps.daily_views.min(), apps.daily_views.max())
-#     st.write(apps.weekly_views.min(), apps.weekly_views.max())
-#     bins = np.arange(0, 51, 5)
-#     st.write('bins', bins)
-#     st.write('dtype', apps.daily_views.dtype)
-#     histogram = pd.cut(apps.daily_views, bins=bins)
-#     st.write(type(histogram), histogram.dtype, len(histogram))
-#     st.text(histogram)
-#     st.text(histogram.value_counts())
-#     st.help(st.bar_chart)
+def display_badge_statistics(apps: pd.DataFrame) -> None:
+    """Displays a bunch of statistics about apps with and without badges."""
+    with st.beta_expander("Badge statistics"):
+        no_badges = apps["status"] == "No badge"
+        yes_badges = apps["status"] == "Has badge"
+        error_apps = ~(no_badges | yes_badges)
+        st.bar_chart(apps.status.value_counts())
     
-#     # # Generating Data
-#     # source = pd.DataFrame({
-#     #     'Trial A': np.random.normal(0, 0.8, 1000),
-#     #     'Trial B': np.random.normal(-2, 1, 1000),
-#     #     'Trial C': np.random.normal(3, 2, 1000)
-#     # })
-
-#     # alt.Chart(source).transform_fold(
-#     #     ['Trial A', 'Trial B', 'Trial C'],
-#     #     as_=['Experiment', 'Measurement']
-#     # ).mark_area(
-#     #     opacity=0.3,
-#     #     interpolate='step'
-#     # ).encode(
-#     #     alt.X('Measurement:Q', bin=alt.Bin(maxbins=100)),
-#     #     alt.Y('count()', stack=None),
-#     #     alt.Color('Experiment:N')
-#     # )
-
 def main():
     """Execution starts here."""
+
+    # Display the app title
+    st.write("## Apps")
+
     # These are all the options the user can set
     config = ConfigOptions()
-
-    # Get a github object from the user's authentication token
     github = streamlit_github.from_access_token(config.access_token)
 
     # Get the app dataframe
     apps = get_s4a_apps()
     apps = filter_apps(apps)
-        
+
     # Don't do anything until the use clicks this button.
     if not (config.auto_process_apps or st.button('Process apps')):
         return
-
     apps = compute_app_status(apps, config, github)
+
+    # Write out the results
     st.write("### Processed apps")
     st.write(apps)
 
     # Display some summary statistics on what the badges are doing
-    # display_badge_statistics(apps)
+    display_badge_statistics(apps)
+            
+    # Filter down to just those apps which have no badges
+    no_badges = apps["status"] == "No badge"
+    apps = apps[no_badges]
 
-#     if st.button('Fork the repo'):
-#         repo = coords.get_repo(github)
-#         'repo', repo
-#         streamlit_github.fork_and_clone_repo(repo, FORK_BASE_PATH)
+    # Let the user futher filter down the apps to fork
+    first_app_index, last_app_index = \
+        st.slider("Range of remaining apps to fork", 0, len(apps), (0, 1))
+    if first_app_index >= last_app_index:
+        raise RuntimeError('Must select at least one app.')
+    apps = apps[first_app_index:last_app_index].copy()
+    st.write("## Remaining apps to fork", apps)
+
+    # When clicked for the given repos.
+    if st.button('Fork repos'):
+        for app in apps.itertuples():
+            st.write("App to fork")
+            coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
+            st.write({attr:getattr(coords, attr)
+                for attr in ['owner', 'repo', 'branch', 'path']})
+            repo = coords.get_repo(github)
+            st.write(repo)
+            forked_repo_path = streamlit_github.fork_and_clone_repo(repo, FORK_BASE_PATH)
+            st.write("forked_repo_path", forked_repo_path)
 
 # Start execution at the main() function 
 if __name__ == '__main__':

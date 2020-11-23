@@ -231,9 +231,9 @@ def has_streamlit_badge(repo: Repository.Repository) -> bool:
     else:
         return False
 
-    # Shouldn't be st.cached because this has a side effect.
+# Shouldn't be st.cached because this has a side effect.
 def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
-    """Clones the given repository into the path give by base_path and returns
+    """Clones the given repository into the path give by base_path.Returns
     the root path of the repository."""
 
     # Fork the original repo
