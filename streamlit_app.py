@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from github import MainClass as GithubMainClass
 from github.GithubException import UnknownObjectException
+from typing import Iterator
 
 # This is where we will store all the forked repositories
 FORK_BASE_PATH = 'forks'
@@ -25,9 +26,20 @@ class ConfigOptions:
     def __init__(self) -> None:
         """Adds UI elements which give us some config information."""
         self.access_token = st.sidebar.text_input("Github access token", type="password")
+        self.use_debug_repos = st.sidebar.checkbox('Use a debug repo list')
         self.auto_expand = st.sidebar.checkbox('Auto-expand app display')
         self.auto_process_apps = st.sidebar.checkbox("Auto-process apps")
         self.show_readmes = st.sidebar.checkbox("Show readme contents")
+    
+def coords_iter(apps: pd.DataFrame) -> Iterator[streamlit_github.GithubCoords]:
+    """Takes a list of apps and iterate over that list, yielding GithubCoord objects."""
+
+    for app in apps.itertuples():
+        st.write("Iterating on", app)
+        if hasattr(app, "app_url"):
+            yield streamlit_github.GithubCoords.from_app_url(app.app_url)
+        else:
+            yield streamlit_github.GithubCoords.from_github_url(app.github_url)
 
 @st.cache
 def get_s4a_apps() -> pd.DataFrame:
@@ -127,16 +139,7 @@ def display_badge_statistics(apps: pd.DataFrame) -> None:
         error_apps = ~(no_badges | yes_badges)
         st.bar_chart(apps.status.value_counts())
     
-def main():
-    """Execution starts here."""
-
-    # Display the app title
-    st.write("## Apps")
-
-    # These are all the options the user can set
-    config = ConfigOptions()
-    github = streamlit_github.from_access_token(config.access_token)
-
+def parse_app_from_file(config: ConfigOptions, github: GithubMainClass.Github):
     # Get the app dataframe
     apps = get_s4a_apps()
     apps = filter_apps(apps)
@@ -162,20 +165,48 @@ def main():
         st.slider("Range of remaining apps to fork", 0, len(apps), (0, 1))
     if first_app_index >= last_app_index:
         raise RuntimeError('Must select at least one app.')
-    apps = apps[first_app_index:last_app_index].copy()
-    st.write("## Remaining apps to fork", apps)
+    return apps[first_app_index:last_app_index].copy()
 
+def create_debug_app_list():
+    """Creates a list of apps which we can use to test the fork, branch and commit algorithms."""
+
+    app_git_urls = [
+        "https://github.com/tester-burner/test1/blob/main/README.md",
+    ]
+    apps = pd.DataFrame()
+    apps['github_url'] = app_git_urls
+    st.write(apps)
+    st.write(f"Len apps {len(apps)}")
+    apps.loc[:,'status'] = "No badge"
+    return apps
+
+
+def main():
+    """Execution starts here."""
+
+    # Display the app title
+    st.write("## Apps")
+
+    # These are all the options the user can set
+    config = ConfigOptions()
+    github = streamlit_github.from_access_token(config.access_token)
+
+    if config.use_debug_repos:
+        apps = create_debug_app_list()
+    else:
+        apps = parse_app_from_file(config, github)
+    st.write("## Remaining apps to fork", apps)
+        
     # When clicked for the given repos.
     if st.button('Fork repos'):
-        for app in apps.itertuples():
+        for coords in coords_iter(apps):
             st.write("App to fork")
-            coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
             st.write({attr:getattr(coords, attr)
                 for attr in ['owner', 'repo', 'branch', 'path']})
             repo = coords.get_repo(github)
             st.write(repo)
             forked_repo_path = streamlit_github.fork_and_clone_repo(repo, FORK_BASE_PATH)
-            st.write("forked_repo_path", forked_repo_path)
+            st.write(f"forked_repo_path: `{forked_repo_path}`")
 
 # Start execution at the main() function 
 if __name__ == '__main__':

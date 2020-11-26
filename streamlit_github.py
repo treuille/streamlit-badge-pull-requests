@@ -18,6 +18,7 @@ from github import ContentFile
 from github import Repository
 from github import RateLimitExceededException
 from github import UnknownObjectException
+from github import BadCredentialsException
 from github import GithubException
 from github import MainClass as GithubMainClass
 
@@ -165,13 +166,6 @@ class GithubCoords:
 
         return repo
 
-    
-    #    def get_contents(self, github: GithubMainClass.Github) -> ContentFile.ContentFile:
-    #        """Get a live reference to the file contents pointed
-    #        by these Github coordinates."""
-    #
-    #        return self.get_repo(github).get_contents(self.path, ref=self.branch)
-
 @rate_limit
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS)
 def from_access_token(access_token):
@@ -216,8 +210,14 @@ def get_streamlit_files(github, github_login):
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS, suppress_st_warning=True)
 def get_readme(repo: Repository.Repository) -> ContentFile.ContentFile:
     """Gets the readme for this repo, or None if the repo has none."""
-    contents = repo.get_contents("")
+    try:
+        contents = repo.get_contents("")
+    except (UnknownObjectException, BadCredentialsException):
+        return None
+
+    st.write(f"`get_readme`: `{type(contents)}` for `{repo}`")
     for content_file in contents:
+        st.write(f"`get_readme`: `{content_file.name}`")
         if content_file.name.lower() == "readme.md":
             return content_file
     return None
