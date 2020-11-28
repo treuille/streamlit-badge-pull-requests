@@ -8,6 +8,7 @@ import pandas as pd
 from github import MainClass as GithubMainClass
 from github import ContentFile
 from github.GithubException import UnknownObjectException
+from github import GithubException
 from typing import Iterator
 
 # This is where we will store all the forked repositories
@@ -58,6 +59,7 @@ class ConfigOptions:
         self.auto_expand = st.sidebar.checkbox('Auto-expand app display')
         self.auto_process_apps = st.sidebar.checkbox("Auto-process apps")
         self.show_readmes = st.sidebar.checkbox("Show readme contents")
+        self.do_pull_requests = st.sidebar.checkbox("Send pull reuqests")
     
 def coords_iter(apps: pd.DataFrame) -> Iterator[streamlit_github.GithubCoords]:
     """Takes a list of apps and iterate over that list, yielding GithubCoord objects."""
@@ -282,16 +284,16 @@ def main():
             repo = coords.get_repo(github)
             forked_repo = streamlit_github.fork_repo(repo)
 
-            # st.write(forked_repo, forked_repo._streamlit_hash)
-            # readme = streamlit_github.get_readme(forked_repo)
-            # st.write('readme', readme)
-            # st.write("path:", readme.path)
-            # new_contents = add_badge_to_readme(readme, app_url)
-            # if new_contents is None:
-            #     continue
-            # forked_repo.update_file(readme.path, COMMIT_MESSAGE,
-            #         new_contents, readme.sha)
-            # st.success("Just added a badge to the readme.")
+            st.write(forked_repo, forked_repo._streamlit_hash)
+            readme = streamlit_github.get_readme(forked_repo)
+            st.write('readme', readme)
+            st.write("path:", readme.path)
+            new_contents = add_badge_to_readme(readme, app_url)
+            if new_contents is None:
+                continue
+            forked_repo.update_file(readme.path, COMMIT_MESSAGE,
+                    new_contents, readme.sha)
+            st.success("Just added a badge to the readme.")
 
             # Create a pull request
             pull_request_args = {
@@ -299,12 +301,17 @@ def main():
                 'head': f"{forked_repo.owner.login}:{forked_repo.default_branch}",
                 'base': repo.default_branch,
                 'body': BADGE_PULL_REQUEST_BODY,
-                # 'maintainer_can_modify': True,
             }
-            st.write("Creating pull request", pull_request_args)
-            pull_request = repo.create_pull(**pull_request_args)
-            st.write("Created pull request", pull_request)
-            raise RuntimeError("Does this pull reuest look good?")
+            if config.do_pull_requests:
+                st.write("Creating pull request", pull_request_args)
+                try:
+                    pull_request = repo.create_pull(**pull_request_args)
+                    st.write("Created pull request", pull_request)
+                except GithubException:
+                    st.warning("Pull requests already exists.")
+            else:
+                st.warning("Skipping this pull request.")
+            raise RuntimeError("Just did a pull request.")
 
 # title	string	Required.
 # The title of the new pull request.
@@ -326,6 +333,7 @@ def main():
 
             # forked_repo_path = streamlit_github.fork_and_clone_repo(repo, FORK_BASE_PATH)
             # st.write(f"forked_repo_path: `{forked_repo_path}`")
+# ....
 
 # Start execution at the main() function 
 if __name__ == '__main__':
