@@ -290,10 +290,11 @@ def main():
             st.write("path:", readme.path)
             new_contents = add_badge_to_readme(readme, app_url)
             if new_contents is None:
-                continue
-            forked_repo.update_file(readme.path, COMMIT_MESSAGE,
-                    new_contents, readme.sha)
-            st.success("Just added a badge to the readme.")
+                forked_repo.update_file(readme.path, COMMIT_MESSAGE,
+                        new_contents, readme.sha)
+                st.success("Just added a badge to the readme.")
+            else:
+                st.warning("No extra commit since badge already exists.")
 
             # Create a pull request
             pull_request_args = {
@@ -307,11 +308,11 @@ def main():
                 try:
                     pull_request = repo.create_pull(**pull_request_args)
                     st.write("Created pull request", pull_request)
-                except GithubException:
-                    st.warning("Pull requests already exists.")
+                except GithubException as e:
+                    st.error("Error creating the pull request.")
+                    st.json(e.data)
             else:
                 st.warning("Skipping this pull request.")
-            raise RuntimeError("Just did a pull request.")
 
 # title	string	Required.
 # The title of the new pull request.
