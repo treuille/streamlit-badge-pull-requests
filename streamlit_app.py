@@ -65,7 +65,6 @@ def coords_iter(apps: pd.DataFrame) -> Iterator[streamlit_github.GithubCoords]:
     """Takes a list of apps and iterate over that list, yielding GithubCoord objects."""
 
     for app in apps.itertuples():
-        st.write("Iterating on", app)
         if hasattr(app, "app_url"):
             coords = streamlit_github.GithubCoords.from_app_url(app.app_url)
             app_url = app.app_url
@@ -134,7 +133,7 @@ def compute_app_status(apps: pd.DataFrame, config: ConfigOptions, github: Github
                 if repo is None:
                     raise ForkAppError("Repo does not exist")
 
-                readme = streamlit_github.get_readme(repo)
+                readme = streamlit_github.get_readme(github, repo)
                 if readme is None:
                     raise ForkAppError("Readme does not exist")
 
@@ -146,7 +145,7 @@ def compute_app_status(apps: pd.DataFrame, config: ConfigOptions, github: Github
                 if repo.fork:
                     raise ForkAppError("Repo forks another.")
 
-                if streamlit_github.has_streamlit_badge(repo):
+                if streamlit_github.has_streamlit_badge(github, repo):
                     app_status = "Has badge"
                 else:
                     app_status = "No badge"
@@ -222,9 +221,9 @@ def add_badge_to_readme(readme: ContentFile.ContentFile, app_url: str) -> str:
 
     # Don't add the badge twice
     badge_image = "https://static.streamlit.io/badges/streamlit_badge_black_white.svg"
-    # if badge_image in readme_contents:
-    #     st.warning("Readme already has badge, skipping...")
-    #     return None
+    if badge_image in readme_contents:
+        st.warning("Readme already has badge, skipping...")
+        return None
 
     # Compute the badge location.
     st.write(f"app_url: `{app_url}`")
@@ -259,6 +258,54 @@ def add_badge_to_readme(readme: ContentFile.ContentFile, app_url: str) -> str:
     st.text(new_contents)
     return new_contents
 
+
+def batch_fork_repos(
+        apps: pd.DataFrame,
+        config: ConfigOptions,
+        github: GithubMainClass.Github):
+    """Goes through a list of apps and forks them all and then
+    add badges to them an issues pull requests."""
+    for coords, app_url in coords_iter(apps):
+        with st.beta_expander(app_url, expanded=config.auto_expand):
+            # Fork the repo.
+            st.write("App to fork")
+            st.write({attr:getattr(coords, attr)
+                for attr in ['owner', 'repo', 'branch', 'path']})
+            repo = coords.get_repo(github)
+            forked_repo = streamlit_github.fork_repo(repo)
+
+            # Add a badge to the readme.
+            st.write(forked_repo, forked_repo._streamlit_hash)
+            readme = streamlit_github.get_readme(github, forked_repo)
+            new_contents = add_badge_to_readme(readme, app_url)
+            if new_contents is None:
+                st.warning("No extra commit since badge already exists.")
+            else:
+                forked_repo.update_file(readme.path, COMMIT_MESSAGE,
+                        new_contents, readme.sha)
+                st.success("Just added a badge to the readme.")
+
+            # If we haven't allowed pull requesting, then nothing more to do.
+            if not config.do_pull_requests:
+                st.warning("Skipping this pull request.")
+                continue
+
+            # Create a pull request
+            pull_request_args = {
+                'title': BADGE_PULL_REQUEST_TITLE,
+                'head': f"{forked_repo.owner.login}:{forked_repo.default_branch}",
+                'base': repo.default_branch,
+                'body': BADGE_PULL_REQUEST_BODY,
+            }
+            st.write("Creating pull request", pull_request_args)
+            try:
+                pull_request = repo.create_pull(**pull_request_args)
+                st.write("Created pull request", pull_request)
+            except GithubException as e:
+                st.error("Error creating the pull request.")
+                st.json(e.data)
+
+
 def main():
     """Execution starts here."""
 
@@ -277,64 +324,7 @@ def main():
         
     # When clicked for the given repos.
     if st.button('Fork repos'):
-        for coords, app_url in coords_iter(apps):
-            st.write("App to fork")
-            st.write({attr:getattr(coords, attr)
-                for attr in ['owner', 'repo', 'branch', 'path']})
-            repo = coords.get_repo(github)
-            forked_repo = streamlit_github.fork_repo(repo)
-
-            st.write(forked_repo, forked_repo._streamlit_hash)
-            readme = streamlit_github.get_readme(forked_repo)
-            st.write('readme', readme)
-            st.write("path:", readme.path)
-            new_contents = add_badge_to_readme(readme, app_url)
-            if new_contents is None:
-                forked_repo.update_file(readme.path, COMMIT_MESSAGE,
-                        new_contents, readme.sha)
-                st.success("Just added a badge to the readme.")
-            else:
-                st.warning("No extra commit since badge already exists.")
-
-            # Create a pull request
-            pull_request_args = {
-                'title': BADGE_PULL_REQUEST_TITLE,
-                'head': f"{forked_repo.owner.login}:{forked_repo.default_branch}",
-                'base': repo.default_branch,
-                'body': BADGE_PULL_REQUEST_BODY,
-            }
-            if config.do_pull_requests:
-                st.write("Creating pull request", pull_request_args)
-                try:
-                    pull_request = repo.create_pull(**pull_request_args)
-                    st.write("Created pull request", pull_request)
-                except GithubException as e:
-                    st.error("Error creating the pull request.")
-                    st.json(e.data)
-            else:
-                st.warning("Skipping this pull request.")
-
-# title	string	Required.
-# The title of the new pull request.
-
-# head	string	Required.
-# The name of the branch where your changes are implemented. For cross-repository pull requests in the same network, namespace head with a user like this: username:branch.
-
-# base	string	Required.
-# The name of the branch you want the changes pulled into. This should be an existing branch on the current repository. You cannot submit a pull request to one repository that requests a merge to a base of another repository.
-
-# body	string
-# The contents of the pull request.
-
-# maintainer_can_modify	boolean
-# Indicates whether maintainers can modify the pull request.
-
-# draft	boolean
-# Indicates whether the pull request is a draft. See "Draft Pull Requests" in the GitHub Help documentation to learn more.
-
-            # forked_repo_path = streamlit_github.fork_and_clone_repo(repo, FORK_BASE_PATH)
-            # st.write(f"forked_repo_path: `{forked_repo_path}`")
-# ....
+        batch_fork_repos(apps, config, github)
 
 # Start execution at the main() function 
 if __name__ == '__main__':

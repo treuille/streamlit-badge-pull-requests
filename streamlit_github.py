@@ -129,8 +129,6 @@ class GithubCoords:
              r"(?P<path>[\w-]+\.md)"
              )
         matched_url = github_url.match(url)
-        st.write(f'**github_url:**', github_url)
-        st.write(f'**url:** `{url}`')
         return GithubCoords(
             matched_url.group('owner'),
             matched_url.group('repo'),
@@ -150,7 +148,7 @@ class GithubCoords:
         # Get the underlying github repo, or None if it doesn't exist.
         try:
             repo = github.get_repo(f"{self.owner}/{self.repo}") 
-        except UnknownObjectException:
+        except (UnknownObjectException, BadCredentialsException):
             return None
         
         # Adds a string which lets us hash this repository quickly
@@ -180,7 +178,6 @@ def add_streamlit_hash(repo: Repository.Repository) -> None:
     st.write(f'repo._streamlit_hash: `{repo._streamlit_hash}`')
 
 
-@rate_limit
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS)
 def from_access_token(access_token):
     """Returns a ghitub object from an access token."""
@@ -221,8 +218,11 @@ def get_streamlit_files(github, github_login):
             # In this case, we have no idea what's going on, so just raise again. 
             raise
 
+@rate_limit
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS, suppress_st_warning=True)
-def get_readme(repo: Repository.Repository) -> ContentFile.ContentFile:
+def get_readme(
+       github: GithubMainClass.Github,
+       repo: Repository.Repository) -> ContentFile.ContentFile:
     """Gets the readme for this repo, or None if the repo has none."""
     try:
         contents = repo.get_contents("")
@@ -236,9 +236,12 @@ def get_readme(repo: Repository.Repository) -> ContentFile.ContentFile:
             return content_file
     return None
 
+@rate_limit
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS, suppress_st_warning=True)
-def has_streamlit_badge(repo: Repository.Repository) -> bool:
-    readme = get_readme(repo)
+def has_streamlit_badge(
+        github: GithubMainClass.Github,
+        repo: Repository.Repository) -> bool:
+    readme = get_readme(github, repo)
     if readme:
         readme_contents = readme.decoded_content.decode('utf-8')
         return BADGE_URL in readme_contents
