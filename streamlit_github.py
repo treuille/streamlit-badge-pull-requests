@@ -152,19 +152,33 @@ class GithubCoords:
             repo = github.get_repo(f"{self.owner}/{self.repo}") 
         except UnknownObjectException:
             return None
-
-        # Figure out the most recent modification time
-        repo_last_modified = datetime.min
-        for branch in repo.get_branches():
-            branch_last_modified = branch.commit.commit.committer.date
-            if branch_last_modified > repo_last_modified:
-                repo_last_modified = branch_last_modified  
-
-        # Give this repo a hash which represents the most recent modification time.
-        repo._streamlit_hash = f"{self.owner}/{self.repo} @ {repo_last_modified}"
-        st.write(f'repo._streamlit_hash: `{repo._streamlit_hash}`')
-
+        
+        # Adds a string which lets us hash this repository quickly
+        add_streamlit_hash(repo)
         return repo
+
+def add_streamlit_hash(repo: Repository.Repository) -> None:
+    """Adds a string to the repo which reflects the most recent
+    modification time for the repo."""
+
+    # A litle debug output
+    st.write("Owner:", repo.owner.login)
+    st.write("Name:", repo.name)
+
+    # raise RuntimeError("Testing our abilitity to introspect repos.")
+    # raise RuntimeError("Testing add_streamlit_hash.")
+        
+    # Figure out the most recent modification time
+    repo_last_modified = datetime.min
+    for branch in repo.get_branches():
+        branch_last_modified = branch.commit.commit.committer.date
+        if branch_last_modified > repo_last_modified:
+            repo_last_modified = branch_last_modified  
+
+    # Give this repo a hash which represents the most recent modification time.
+    repo._streamlit_hash = f"{repo.owner.login}/{repo.name} @ {repo_last_modified}"
+    st.write(f'repo._streamlit_hash: `{repo._streamlit_hash}`')
+
 
 @rate_limit
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS)
@@ -230,6 +244,13 @@ def has_streamlit_badge(repo: Repository.Repository) -> bool:
         return BADGE_URL in readme_contents
     else:
         return False
+
+def fork_repo(repo: Repository.Repository) -> Repository.Repository:
+    """Fork this repository and return a new version of it which 
+    has a _streamlit_hash tag."""
+    forked_repo = repo.create_fork()
+    add_streamlit_hash(forked_repo)
+    return forked_repo
 
 # Shouldn't be st.cached because this has a side effect.
 def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
