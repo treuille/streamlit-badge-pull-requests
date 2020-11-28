@@ -165,6 +165,7 @@ class GithubCoords:
 class RepoHasNoBranches(Exception):
     def __init__(self, repo_name):
         Exception.__init__(self, repo_name)
+        self.repo_name = repo_name
 
 def add_streamlit_hash(repo: Repository.Repository) -> None:
     """Adds a string to the repo which reflects the most recent
@@ -183,12 +184,22 @@ def add_streamlit_hash(repo: Repository.Repository) -> None:
     # raise RuntimeError("Testing add_streamlit_hash.")
         
     # Figure out the most recent modification time
-    repo_last_modified = datetime.min
-    for branch in repo.get_branches():
-        branch_last_modified = branch.commit.commit.committer.date
-        if branch_last_modified > repo_last_modified:
-            repo_last_modified = branch_last_modified  
-    if repo_last_modified == datetime.min:
+    try:
+        repo_last_modified = datetime.min
+        for branch in repo.get_branches():
+            try:
+                branch_last_modified = branch.commit.commit.committer.date
+            except GithubException:
+                raise RepoHasNoBranches(f"{repo.owner.login}/{repo.name}")
+            if branch_last_modified > repo_last_modified:
+                repo_last_modified = branch_last_modified  
+        st.warning(
+            f"adding hash repo_last_modified=`{repo_last_modified}` " + 
+            f"datetime.min=`{datetime.min}` " + 
+            f"equal=`{repo_last_modified == datetime.min}`")
+        if repo_last_modified == datetime.min:
+            raise RepoHasNoBranches(f"{repo.owner.login}/{repo.name}")
+    except UnknownObjectException:
         raise RepoHasNoBranches(f"{repo.owner.login}/{repo.name}")
 
     # Give this repo a hash which represents the most recent modification time.
@@ -269,9 +280,30 @@ def has_streamlit_badge(
 def fork_repo(repo: Repository.Repository) -> Repository.Repository:
     """Fork this repository and return a new version of it which 
     has a _streamlit_hash tag."""
+    
+    # After a repo is forked, we may not immediately have access to it's
+    # branches. To combat this, we have this retry mechanism built in.
+    MAX_FETCH_RETRIES = 3
+    RETRY_TIMEOUT_SECONDS = 10.0
+
+    # Create the fork
     forked_repo = repo.create_fork()
-    add_streamlit_hash(forked_repo)
-    return forked_repo
+
+    # Try to stamp it with "last modified" timestamp which both acts as
+    # as a hash for this repo, and which verifies that we have access
+    # to the forked repo.
+    for retry in range(1, MAX_FETCH_RETRIES + 1):
+        try:
+            add_streamlit_hash(forked_repo)
+            return forked_repo
+        except RepoHasNoBranches as e:
+            st.warning(
+                f"**Retry `{retry}`:** `{e.repo_name}` has no branches. " + 
+                f"Waiting {RETRY_TIMEOUT_SECONDS}.")
+            if retry == MAX_FETCH_RETRIES:
+                raise
+            time.sleep(RETRY_TIMEOUT_SECONDS)
+    assert False, "Should never be able to get here."
 
 # Shouldn't be st.cached because this has a side effect.
 def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
