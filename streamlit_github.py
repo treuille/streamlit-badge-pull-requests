@@ -64,7 +64,7 @@ def rate_limit(limit_type: str):
                 remaining = search_limit.reset - datetime.utcnow()
                 wait_seconds = math.ceil(remaining.total_seconds() + 1.0)
                 wait_seconds = min(wait_seconds, MAX_WAIT_SECONDS)
-                with st.spinner(f'Waiting {wait_seconds}s to avoid rate limit.'):
+                with st.spinner(f'Waiting {wait_seconds}s to avoid {limit_type} rate limit.'):
                     time.sleep(wait_seconds)
                 return func(github, *args, **kwargs)
         return wrapped_func
@@ -233,7 +233,7 @@ def get_readme(
     """Gets the readme for this repo, or None if the repo has none."""
     try:
         contents = repo.get_contents("")
-    except (UnknownObjectException, BadCredentialsException):
+    except UnknownObjectException:
         return None
 
     st.write(f"`get_readme`: `{type(contents)}` for `{repo}`")
