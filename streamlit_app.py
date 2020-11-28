@@ -320,7 +320,14 @@ def main():
         apps = create_debug_app_list()
     else:
         apps = parse_app_from_file(config, github)
+
+    if apps is None:
+        st.warning("No apps to process.")
+        return
+
     st.write("## Remaining apps to fork", apps)
+    with st.beta_expander("Show last app"):
+        st.write(apps['app_url'].iloc[-1])
         
     # When clicked for the given repos.
     if st.button('Fork repos'):
