@@ -42,26 +42,33 @@ GITHUB_HASH_FUNCS = {
     Repository.Repository: hash_repo,
 }
 
-def rate_limit(func):
+def rate_limit(limit_type: str):
     """Function decorator to try to handle Github search rate limits.
-    See: https://developer.github.com/v3/search/#rate-limit"""
+    See: https://developer.github.com/v3/search/#rate-limit
 
-    @functools.wraps(func)
-    def wrapped_func(github, *args, **kwargs):
-        try:
-            return func(github, *args, **kwargs)
-        except RateLimitExceededException:
-            # We were rate limited by Github, Figure out how long to wait.
-            # Round up, and wait that long.
-            MAX_WAIT_SECONDS = 60.0
-            search_limit = github.get_rate_limit().search
-            remaining = search_limit.reset - datetime.utcnow()
-            wait_seconds = math.ceil(remaining.total_seconds() + 1.0)
-            wait_seconds = min(wait_seconds, MAX_WAIT_SECONDS)
-            with st.spinner(f'Waiting {wait_seconds}s to avoid rate limit.'):
-                time.sleep(wait_seconds)
-            return func(github, *args, **kwargs)
-    return wrapped_func
+    limit_type: 'core' for regular API calls | 'search' for search calls
+    """
+
+    # Willing to wait up to an hour to lift the limits.
+    MAX_WAIT_SECONDS = 60.0 * 60.0
+
+    def rate_limit_decorator(func):
+        @functools.wraps(func)
+        def wrapped_func(github, *args, **kwargs):
+            try:
+                return func(github, *args, **kwargs)
+            except RateLimitExceededException:
+                # We were rate limited by Github, Figure out how long to wait.
+                # Round up, and wait that long.
+                search_limit = getattr(github.get_rate_limit(), limit_type)
+                remaining = search_limit.reset - datetime.utcnow()
+                wait_seconds = math.ceil(remaining.total_seconds() + 1.0)
+                wait_seconds = min(wait_seconds, MAX_WAIT_SECONDS)
+                with st.spinner(f'Waiting {wait_seconds}s to avoid rate limit.'):
+                    time.sleep(wait_seconds)
+                return func(github, *args, **kwargs)
+        return wrapped_func
+    return rate_limit_decorator
 
 # The URL of the app badge to include in the apps README.md
 BADGE_URL = r"https://static.streamlit.io/badges/streamlit_badge_black_white.svg"
@@ -185,7 +192,7 @@ def from_access_token(access_token):
     github = Github(access_token) 
     return github
 
-@rate_limit
+@rate_limit("search")
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True)
 def get_user_from_email(github, email):
     """Returns a user for that email or None."""
@@ -198,7 +205,7 @@ def get_user_from_email(github, email):
     else:
         raise RuntimeError(f'{email} associated with {len(users)} users.')
 
-@rate_limit
+@rate_limit("search")
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS, persist=True)
 def get_streamlit_files(github, github_login):
     """Returns every single file on github which imports streamlit."""
@@ -218,7 +225,7 @@ def get_streamlit_files(github, github_login):
             # In this case, we have no idea what's going on, so just raise again. 
             raise
 
-@rate_limit
+@rate_limit("core")
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS, suppress_st_warning=True)
 def get_readme(
        github: GithubMainClass.Github,
@@ -236,7 +243,7 @@ def get_readme(
             return content_file
     return None
 
-@rate_limit
+@rate_limit("core")
 @st.cache(hash_funcs=GITHUB_HASH_FUNCS, suppress_st_warning=True)
 def has_streamlit_badge(
         github: GithubMainClass.Github,
