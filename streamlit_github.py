@@ -162,9 +162,18 @@ class GithubCoords:
         add_streamlit_hash(repo)
         return repo
 
+class RepoHasNoBranches(Exception):
+    def __init__(self, repo_name):
+        Exception.__init__(self, repo_name)
+
 def add_streamlit_hash(repo: Repository.Repository) -> None:
     """Adds a string to the repo which reflects the most recent
-    modification time for the repo."""
+    modification time for the repo.
+
+    Raises RepoHasNoBranches if the repo doesn't have any branches
+    then this raises RepoHasNoBranches, which would probably happen
+    if they repo had been just created.
+    """
 
     # A litle debug output
     st.write("Owner:", repo.owner.login)
@@ -179,6 +188,8 @@ def add_streamlit_hash(repo: Repository.Repository) -> None:
         branch_last_modified = branch.commit.commit.committer.date
         if branch_last_modified > repo_last_modified:
             repo_last_modified = branch_last_modified  
+    if repo_last_modified == datetime.min:
+        raise RepoHasNoBranches(f"{repo.owner.login}/{repo.name}")
 
     # Give this repo a hash which represents the most recent modification time.
     repo._streamlit_hash = f"{repo.owner.login}/{repo.name} @ {repo_last_modified}"
