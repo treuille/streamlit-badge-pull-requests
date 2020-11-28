@@ -293,7 +293,7 @@ def batch_fork_repos(
             # Create a pull request
             pull_request_args = {
                 'title': BADGE_PULL_REQUEST_TITLE,
-                'head': f"{forked_repo.owner.login}:{forked_repo.default_branch}",
+                'head': f"{forked_repo.owner.login}:{repo.default_branch}",
                 'base': repo.default_branch,
                 'body': BADGE_PULL_REQUEST_BODY,
             }
