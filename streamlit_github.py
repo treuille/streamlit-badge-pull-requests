@@ -305,29 +305,3 @@ def fork_repo(repo: Repository.Repository) -> Repository.Repository:
             time.sleep(RETRY_TIMEOUT_SECONDS)
     assert False, "Should never be able to get here."
 
-# Shouldn't be st.cached because this has a side effect.
-def fork_and_clone_repo(repo: Repository.Repository, base_path: str) -> str:
-    """Clones the given repository into the path give by base_path.Returns
-    the root path of the repository."""
-
-    # Fork the original repo
-    forked_repo = repo.create_fork()
-    st.success(f"Forked repo `{repo.git_url}`")
-
-    # Check to see whether we've already cloned this repo.
-    clone_path = os.path.join(base_path, f'{repo.owner.login}__{forked_repo.name}')
-    if os.path.exists(clone_path):
-        st.warning(f"Repo path `{clone_path}` already exists. Skipping.")        
-        return clone_path
-
-    # Clone the repo.
-    temp_path = tempfile.mkdtemp()
-    st.write(clone_path, temp_path)
-    clone_retval = streamlit_subprocess.run(['git', 'clone', forked_repo.git_url, temp_path])
-    if clone_retval != 0:
-        raise RuntimeError(f'Unable to clone {forked_repo.git_url}.')
-    shutil.move(temp_path, clone_path)
-    st.success(f"Cloned `{forked_repo.git_url}` to `{clone_path}`.")
-    return clone_path
-
-

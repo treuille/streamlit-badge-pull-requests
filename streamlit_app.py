@@ -18,6 +18,7 @@ FORK_BASE_PATH = 'forks'
 COMMIT_MESSAGE = "Added Streamlit app badge for discoverability"
 
 # This is the title we give the pull request.
+OLD_BADGE_PULL_REQUEST_TITLE = "Add a Stremlit app badge to readme"
 BADGE_PULL_REQUEST_TITLE = "Add a Stremlit app badge to readme"
 
 # This is the body of the pull request.
