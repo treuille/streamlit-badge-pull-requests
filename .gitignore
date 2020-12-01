@@ -6,8 +6,8 @@ __pycache__/
 # Forked repos
 forks/
 
-# Automaically created by vim
-.vim/
+# # Automaically created by vim
+# .vim/
 
 # # C extensions
 # *.so

@@ -8,6 +8,7 @@ streamlit-nightly = "*"
 pylint = "*"
 boto3 = "*"
 pygithub = "*"
+mypy = "*"
 
 [dev-packages]
 
