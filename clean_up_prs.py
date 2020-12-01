@@ -9,16 +9,17 @@ Todo:
 
 Overview of pieces:
 
-- GithubCache
+- GithubBot
     - map(input, func): map a function over a set and store the errors
-    - 
+    - fromIdToken():
+
+- Repository
+    - a repository from the bot that helps you do stuff
 """
 
 import streamlit as st
+from GitHubBot import GitHubBot
 
-st.write("Clean up PRs.")
+st.title("Fix the typos in the PRs")
 
-def double(x: int) -> int:
-    return x * 2
-
-st.write("double", double(10))
+gh_bot = GitHubBot.from_user_defined_token()
