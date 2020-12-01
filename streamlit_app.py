@@ -19,22 +19,22 @@ COMMIT_MESSAGE = "Added Streamlit app badge for discoverability"
 
 # This is the title we give the pull request.
 OLD_BADGE_PULL_REQUEST_TITLE = "Add a Stremlit app badge to readme"
-BADGE_PULL_REQUEST_TITLE = "Add a Stremlit app badge to readme"
+BADGE_PULL_REQUEST_TITLE = "Add a Streamlit app badge to README"
 
 # This is the body of the pull request.
 BADGE_PULL_REQUEST_BODY = """
 Hi 👋!
 
-Thank for for making this awesome Streamlit app!
+Thank you for for making this awesome Streamlit app!
 
-I noticed that your project's readme doesn't have a Streamlit badge.
+I noticed that your project's README doesn't have a Streamlit badge.
 Adding one would let people directly click into your app when
 browsing your Github repo. Cool, right?!
 
 This pull request automatically adds a beautiful Streamlit badge to your
-reamde. Just go head and click `Merge pull request` below to get it!
+README. Just go ahead and click `Merge pull request` below to get it!
 
-Happy app creating 🎈 and (for those in the US) happy Thanksgiving too! 🥧
+Happy app creating 🎈
 
 ~ StreamlitBadgeBot 🤖
 ___
@@ -234,7 +234,7 @@ def add_badge_to_readme(readme: ContentFile.ContentFile, app_url: str) -> str:
 
     # Plan A is to add the badge to the end of the title readme,
     # but if that doesn't work, then we just prepend the badge to the
-    # begining of the readme.
+    # beginning of the readme.
     prepend_badge = False
     if '\r' in readme_contents:
         # If we see weird line endings, then don't do anything fancy.
@@ -265,7 +265,7 @@ def batch_fork_repos(
         config: ConfigOptions,
         github: GithubMainClass.Github):
     """Goes through a list of apps and forks them all and then
-    add badges to them an issues pull requests."""
+    add badges to them and issues pull requests."""
     for coords, app_url in coords_iter(apps):
         with st.beta_expander(app_url, expanded=config.auto_expand):
             # Fork the repo.
