@@ -38,10 +38,5 @@ class GitHubBot:
         """The construtor takes an access token."""
         self.github = github.Github(access_token) 
 
-    def _streamlit_hash(self) -> None:
-        """A hash function which returns a string, effectively telling
-        Streamlit caching to ingnore caching this class."""
-        return None
-
 # These are the name that are exposed when someone imports * from this module.
 __all__ = ["GitHubBot"]
