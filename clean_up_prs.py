@@ -18,8 +18,9 @@ Overview of pieces:
 """
 
 import streamlit as st
-from GitHubBot import GitHubBot
+from github_bot import GitHubBot
 
 st.title("Fix the typos in the PRs")
 
 gh_bot = GitHubBot.from_user_defined_token()
+st.write(gh_bot)
