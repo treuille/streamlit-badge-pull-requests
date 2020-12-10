@@ -12,6 +12,7 @@ from typing import Any
 
 def _dont_hash(x: Any) -> None:
     """Streamit hash function which completely ingnores whateve x is."""
+    st.write(f"Calling _dont_hash on an object of type {type(x)}")
     return None
 
 # These are the hash functions which enable us to hash these types properly
@@ -37,6 +38,9 @@ class GitHubBot:
     def __init__(self, access_token: str) -> None:
         """The construtor takes an access token."""
         self.github = github.Github(access_token) 
+        
+        # Outputting the type so that I can figure out the right type for _HASH_FUNCS:
+        st.write(f"self.github has type `{type(self.github)}`")
 
 # These are the name that are exposed when someone imports * from this module.
 __all__ = ["GitHubBot"]
