@@ -1,7 +1,6 @@
 """Special utility functions to use PyGithub with Streamlit."""
 
 import streamlit as st
-import streamlit_subprocess
 import functools
 import os
 import tempfile
