@@ -25,11 +25,11 @@ BADGE_PULL_REQUEST_TITLE = "Add a Streamlit app badge to README"
 BADGE_PULL_REQUEST_BODY = """
 Hi 👋!
 
-Thank you for for making this awesome Streamlit app!
+Thank you for making this awesome Streamlit app!
 
 I noticed that your project's README doesn't have a Streamlit badge.
 Adding one would let people directly click into your app when
-browsing your Github repo. Cool, right?!
+browsing your GitHub repo. Cool, right?!
 
 This pull request automatically adds a beautiful Streamlit badge to your
 README. Just go ahead and click `Merge pull request` below to get it!
